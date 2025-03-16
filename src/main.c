@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "player.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -20,7 +21,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            DrawText("WOWOW", 190, 200, 20, LIGHTGRAY);
+            player();
 
         EndDrawing();
     }
