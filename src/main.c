@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "player.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -13,6 +14,9 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
+    Player player;
+    Initplayer(&player);
+
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 
@@ -20,7 +24,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            DrawText("WOWOW", 190, 200, 20, LIGHTGRAY);
+            Moveplayer(&player);
 
         EndDrawing();
     }
