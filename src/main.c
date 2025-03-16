@@ -14,6 +14,9 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
+    Player player;
+    Initplayer(&player);
+
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 
@@ -21,7 +24,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            player();
+            Moveplayer(&player);
 
         EndDrawing();
     }
