@@ -21,7 +21,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            DrawText("WOWOW", 190, 200, 20, LIGHTGRAY);
+            DrawText("AAAAA", 190, 200, 20, LIGHTGRAY);
 
 
         EndDrawing();
