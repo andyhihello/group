@@ -24,7 +24,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             menu();
-
+            a();
 
         EndDrawing();
     }

@@ -5,5 +5,8 @@
 #include <time.h>
 
 void menu(){
-    DrawText("asd", 190, 200, 20, LIGHTGRAY);
+    DrawText("qwertyu", 190, 200, 20, LIGHTGRAY);
+}
+void a(){
+    
 }
