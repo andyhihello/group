@@ -1,14 +1,8 @@
-#include "raylib.h"
 #include "player.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "main.h"
 
 int main(void)
 {
-
-    const int screenWidth = 2000;
-    const int screenHeight = 1200;
 
     InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
 
@@ -25,6 +19,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             Moveplayer(&player);
+            playerattrack(&player);
 
         EndDrawing();
     }
