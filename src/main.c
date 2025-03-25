@@ -1,5 +1,6 @@
 #include "player.h"
 #include "main.h"
+#include "player_attrack.h"
 
 int main(void)
 {
