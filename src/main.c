@@ -21,7 +21,7 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            DrawText("12345678", 190, 200, 20, LIGHTGRAY);
+            DrawText("asd", 190, 200, 20, LIGHTGRAY);
 
 
         EndDrawing();
