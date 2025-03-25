@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "menu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -16,12 +17,13 @@ int main(void)
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
+        
 
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
 
-            DrawText("asd", 190, 200, 20, LIGHTGRAY);
+            menu();
 
 
         EndDrawing();
