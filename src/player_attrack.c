@@ -12,8 +12,7 @@ void reload(Player *player){
     // 換彈倒數
     if (player->reloadTimeLeft > 0) {
         player->reloadTimeLeft -= GetFrameTime(); // 每幀減少時間
-
-        printf("Reloading time: %.1f\n", player->reloadTimeLeft);
+ 
     }
 
     // 如果換彈完成，重設子彈數量
@@ -66,7 +65,6 @@ void playerattrack(Player *player){
                 bullets[i].speed = (Vector2){ direction.x * BULLET_SPEED, direction.y * BULLET_SPEED };
                 bullets[i].active = true;
                 player->ammo--;
-                printf("Ammo after shot: %d\n", player->ammo);
                 break;
             }
         }
