@@ -9,8 +9,8 @@ typedef enum { MENU, GAME, SETTINGS } GameState;
 
 int main() {
     // 初始化
-    const int screenWidth = 800;
-    const int screenHeight = 600;
+    const int screenWidth = 15000;
+    const int screenHeight = 900;
     InitWindow(screenWidth, screenHeight, "Game"); // (raylib)設定初始視窗長寬、遊戲名稱設定為 "Game"
     SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
