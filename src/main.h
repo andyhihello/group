@@ -1,5 +1,5 @@
-#define screenWidth 2000
-#define screenHeight 1200
+#define screenWidth 1600
+#define screenHeight 900
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
