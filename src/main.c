@@ -51,7 +51,7 @@ int main(void)
                         );
                     }
 
-                    drawbullet();
+                    drawplayerbullet();
                 EndMode2D();
 
                 attrackdata(&player);

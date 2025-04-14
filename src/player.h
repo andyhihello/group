@@ -38,7 +38,7 @@ void Moveplayer(Player *player);
 void reload(Player *player);         // 換彈邏輯
 void attrackdata(Player *player);    // 顯示玩家狀態
 void playerattrack(Player *player);  // 玩家射擊與狀態更新
-void drawbullet(); //子彈繪製
+void drawplayerbullet(); //子彈繪製
 
 
 

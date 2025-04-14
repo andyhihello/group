@@ -126,7 +126,7 @@ void playerattrack(Player *player){
 
 }
 
-void drawbullet(){
+void drawplayerbullet(){
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].active) {
             bullets[i].position.x += bullets[i].speed.x;
