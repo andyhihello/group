@@ -1,8 +1,8 @@
 #include "raylib.h"
 
-#define BUTTON_WIDTH  200
-#define BUTTON_HEIGHT 50
-#define BUTTON_PADDING 20
+#define BUTTON_WIDTH  300 
+#define BUTTON_HEIGHT 75
+#define BUTTON_PADDING 30
 
 //***現在是在什麼遊戲狀態
 typedef enum { MENU, GAME, SETTINGS } GameState;
