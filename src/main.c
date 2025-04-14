@@ -2,7 +2,7 @@
 
 #define BUTTON_WIDTH  450
 #define BUTTON_HEIGHT 90
-#define BUTTON_PADDING 40
+#define BUTTON_PADDING 50
 
 //***現在是在什麼遊戲狀態
 typedef enum { MENU, GAME, SETTINGS } GameState;
