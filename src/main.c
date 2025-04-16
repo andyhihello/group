@@ -1,19 +1,27 @@
 #include "raylib.h"
-#include "menu.h" // 引入 menu.h
+#include "menu.h" 
+#include "main.h"
+#include "player.h"
 
 int main() {
-    // 初始化
-    const int screenWidth = 1600;
-    const int screenHeight = 900;
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
     SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
-    Texture2D background = LoadTexture("resource/background.png");//下載背景圖片
-
-    GameState currentGameState = MENU;
-
-    // 初始化選單
+    //圖檔載入
+    Texture2D scene1_1 = LoadTexture("resource/scene/1-1.png");
+    Texture2D background = LoadTexture("resource/scene/background.png");//下載背景圖片
+    // 初始化
     initMenu(screenWidth, screenHeight, background);
+    GameState currentGameState = MENU;
+    Player player;
+    Initplayer(&player);
+    Camera2D camera = { 0 };
+    camera.target = player.position;
+    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
+    camera.zoom = 1.0f;
+    float camX = player.position.x;
+    float halfScreen = screenWidth / 2.0f;
+    int stage = 1;
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -21,13 +29,24 @@ int main() {
         // 更新
         if (currentGameState == MENU) {
             updateMenu(&currentGameState); 
-        } else if (currentGameState == GAME) {
-            // 遊戲邏輯
-            // ...
-        } else if (currentGameState == SETTINGS) {
+        } 
+        else if (currentGameState == GAME) {
+            if (stage == 1){
+                Moveplayer(&player);
+                playerattrack(&player);
+                camX = player.position.x;
+                //使背景不跑出畫面
+                if (camX < halfScreen) camX = halfScreen;
+                if (camX > stage1Width - halfScreen) camX = stage1Width - halfScreen;
+                camera.target = (Vector2){ camX, screenHeight / 2.0f  };
+            }
+        } 
+        else if (currentGameState == SETTINGS) {
             // 設定邏輯
             // ...
         }
+            
+        
 
         // 開始繪製
         BeginDrawing();
@@ -35,9 +54,31 @@ int main() {
 
         if (currentGameState == MENU) {
             drawMenu();
-        } else if (currentGameState == GAME) {
-            // 在這裡繪製遊戲畫面
-        } else if (currentGameState == SETTINGS) {
+        } 
+        else if (currentGameState == GAME) {
+            BeginMode2D(camera);
+            if (stage == 1){
+                    DrawTexture(scene1_1, 0, 0, WHITE); 
+                    //腳色繪製
+                Texture2D frame = player.isRunning ? player.runFrames[player.currentFrame] : player.texture;
+                if (player.facingRight) {
+                    DrawTextureV(frame, player.position, WHITE);
+                } 
+                else {
+                    DrawTexturePro(
+                        frame,
+                        (Rectangle){ 0, 0, (float)-frame.width, (float)frame.height },  // 負寬度實現鏡像
+                        (Rectangle){ player.position.x, player.position.y, (float)frame.width, (float)frame.height },
+                        (Vector2){ 0, 0 }, 0.0f, WHITE
+                    );
+                    }
+
+                drawplayerbullet();       
+            }
+            EndMode2D();
+            attrackdata(&player);
+        } 
+        else if (currentGameState == SETTINGS) {
             // 在這裡繪製設定畫面
         }
 
