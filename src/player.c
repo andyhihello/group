@@ -6,7 +6,7 @@ Bullet bullets[MAX_BULLETS] = { 0 };
 
 void Initplayer(Player *player){
     // 載入圖片
-    player->texture = LoadTexture("resource/player/stand.png");
+    player->stand = LoadTexture("resource/player/stand.png");
     //奔跑動畫載入
     player->runFrames[0] = LoadTexture("resource/player/run1.png");
     player->runFrames[1] = LoadTexture("resource/player/run2.png");

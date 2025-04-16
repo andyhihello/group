@@ -2,12 +2,12 @@
 #define MENU_H
 
 #include "raylib.h"
+#include "player.h"
 
 #define BUTTON_WIDTH  450
 #define BUTTON_HEIGHT 90
 #define BUTTON_PADDING 50
 
-// 遊戲狀態 
 typedef enum { MENU, GAME, SETTINGS } GameState;
 
 // 函數

@@ -9,6 +9,7 @@
 #define GROUND_Y 520
 
 
+
 typedef struct {
     Vector2 position; //角色位置
     float speed;      //行走速度
@@ -19,7 +20,7 @@ typedef struct {
     bool reloading;         //是否在reload
     float reloadtime;       //換彈所需時間
     float reloadTimeLeft;   // 換彈倒數時間
-    Texture2D texture;   //圖片
+    Texture2D stand;   //圖片
     Texture2D runFrames[9];
     int currentFrame;
     float frameTimer;

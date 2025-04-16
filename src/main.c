@@ -60,7 +60,7 @@ int main() {
             if (stage == 1){
                     DrawTexture(scene1_1, 0, 0, WHITE); 
                     //腳色繪製
-                Texture2D frame = player.isRunning ? player.runFrames[player.currentFrame] : player.texture;
+                Texture2D frame = player.isRunning ? player.runFrames[player.currentFrame] : player.stand;
                 if (player.facingRight) {
                     DrawTextureV(frame, player.position, WHITE);
                 } 
@@ -88,6 +88,9 @@ int main() {
     // 釋放資源並關閉
     CloseWindow();
     UnloadTexture(background);
+    UnloadTexture(scene1_1);
+    UnloadTexture(player.stand);
+    for (int i = 0; i < 9; i++) UnloadTexture(player.runFrames[i]);
 
     return 0;
 }

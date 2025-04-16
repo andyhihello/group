@@ -8,6 +8,7 @@
 #define playerHeight 340
 #define stage1Width 3000
 
+// 遊戲狀態 
 
 #include <stdio.h>
 #include <stdlib.h>
