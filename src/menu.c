@@ -10,6 +10,7 @@ static Color settingsButtonColor = LIGHTGRAY;
 static Color settingsButtonHoverColor = GRAY;
 static Texture2D backgroundTexture; // 用於儲存背景圖片
 
+
 // 初始化選單
 void initMenu(int screenWidth, int screenHeight, Texture2D background) {
     backgroundTexture = background; // 儲存背景圖片
