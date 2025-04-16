@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "menu.h"
+#include "main.h"
 
 // 選單內部使用的變數
 static Rectangle startButton;
@@ -11,7 +12,7 @@ static Color settingsButtonHoverColor = GRAY;
 static Texture2D backgroundTexture; // 用於儲存背景圖片
 
 // 初始化選單
-void initMenu(int screenWidth, int screenHeight, Texture2D background) {
+void initMenu(Texture2D background) {
     backgroundTexture = background; // 儲存背景圖片
 
     // 計算start button的位置
@@ -55,9 +56,7 @@ void updateMenu(GameState *currentGameState) {
 }
 
 // 繪製選單畫面
-void drawMenu(void) {
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
+void drawMenu() {
 
     DrawTexture(backgroundTexture, 0, 0, WHITE);//畫主畫面的背景圖片
     DrawText("Game", screenWidth / 2 - MeasureText("Game", 40) / 2, 100, 40, BLACK);//畫Game(遊戲名)

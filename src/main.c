@@ -11,7 +11,7 @@ int main() {
     Texture2D scene1_1 = LoadTexture("resource/scene/1-1.png");
     Texture2D background = LoadTexture("resource/scene/background.png");//下載背景圖片
     // 初始化
-    initMenu(screenWidth, screenHeight, background);
+    initMenu(background);
     GameState currentGameState = MENU;
     Player player;
     Initplayer(&player);
@@ -32,7 +32,6 @@ int main() {
         } 
         else if (currentGameState == GAME) {
             if (stage == 1){
-                TraceLog(LOG_INFO, "進入 GAME 狀態！");
                 Moveplayer(&player);
                 playerattrack(&player);
                 camX = player.position.x;
