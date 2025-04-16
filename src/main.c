@@ -32,6 +32,7 @@ int main() {
         } 
         else if (currentGameState == GAME) {
             if (stage == 1){
+                TraceLog(LOG_INFO, "進入 GAME 狀態！");
                 Moveplayer(&player);
                 playerattrack(&player);
                 camX = player.position.x;
