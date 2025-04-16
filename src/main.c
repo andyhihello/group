@@ -1,33 +1,52 @@
 #include "raylib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "menu.h" // 引入 menu.h
 
-int main(void)
-{
+int main() {
+    // 初始化
+    const int screenWidth = 1600;
+    const int screenHeight = 900;
+    InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
+    SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
-    const int screenWidth = 2000;
-    const int screenHeight = 1200;
+    Texture2D background = LoadTexture("resource/background.png");//下載背景圖片
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+    GameState currentGameState = MENU;
 
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    // 初始化選單
+    initMenu(screenWidth, screenHeight, background);
 
+    // 主遊戲迴圈
+    while (!WindowShouldClose()) {
+        // 輸入處理 (選單的輸入處理在 updateMenu 中)
+        // 更新
+        if (currentGameState == MENU) {
+            updateMenu(&currentGameState); 
+        } else if (currentGameState == GAME) {
+            // 遊戲邏輯
+            // ...
+        } else if (currentGameState == SETTINGS) {
+            // 設定邏輯
+            // ...
+        }
 
-    while (!WindowShouldClose())    // Detect window close button or ESC key
-    {
-
+        // 開始繪製
         BeginDrawing();
+        ClearBackground(RAYWHITE);
 
-            ClearBackground(RAYWHITE);
-
-            DrawText("WOWOW", 190, 200, 20, LIGHTGRAY);
-
+        if (currentGameState == MENU) {
+            drawMenu();
+        } else if (currentGameState == GAME) {
+            // 在這裡繪製遊戲畫面
+        } else if (currentGameState == SETTINGS) {
+            // 在這裡繪製設定畫面
+        }
 
         EndDrawing();
     }
 
-    CloseWindow();       
+    // 釋放資源並關閉
+    CloseWindow();
+    UnloadTexture(background);
 
     return 0;
 }
