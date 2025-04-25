@@ -7,8 +7,6 @@
 #include <time.h>
 #include <math.h>
 
-#define playerWidth 240
-#define playerHeight 340
 #define screenWidth 1600
 #define screenHeight 900
 #define stage1backgroundCount 5

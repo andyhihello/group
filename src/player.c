@@ -3,6 +3,14 @@
 #include "main.h"
 Bullet bullets[MAX_BULLETS] = { 0 };
 
+Rectangle player_hitbox(Player *player) {
+    return (Rectangle){
+        player->position.x + playerXoffset,
+        player->position.y + playerYoffset,
+        playerWidth,
+        playerHeight
+    };
+}
 
 void player_init(Player *player){
     // 載入圖片
@@ -20,24 +28,44 @@ void player_init(Player *player){
         }
     }
     // 設定腳色初始設定
-    player->position = (Vector2){400, 100};
+    player->position = (Vector2){8500, 100};
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
     player->ammo = 100;
     player->maxAmmo = 100;
-    player->speed = 7;
+    player->speed = 6;
 }
 
-void player_move(Player *player){
+void player_move(Player *player,int stage){
+    Rectangle stage1_wall = { 9010, 0, 70, 455 }; //牆位置與大小
+    Rectangle playerRect; // 更新玩家碰撞矩形
     
+    // 左移
     if (IsKeyDown(KEY_A)) {
         player->position.x -= player->speed;
+
+        // 更新玩家碰撞矩形
+        playerRect = player_hitbox(player);
+
+        // 如果碰到牆，就把角色卡在牆的右側
+        if(stage == 1 && CheckCollisionRecs(playerRect, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
+
         player->facingRight = false;
     }
-    if (IsKeyDown(KEY_D)){ 
+
+    // 右移
+    if (IsKeyDown(KEY_D)) {
         player->position.x += player->speed;
+
+        // 更新玩家碰撞矩形
+        playerRect = player_hitbox(player); 
+
+        // 如果碰到牆，就把角色卡在牆的左側
+        if(stage == 1 && CheckCollisionRecs(playerRect, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
+
         player->facingRight = true;
     }
+
     //跑步動畫
     if (IsKeyDown(KEY_A) || IsKeyDown(KEY_D)) {
         player->frameTimer += GetFrameTime();
@@ -51,9 +79,11 @@ void player_move(Player *player){
         player->currentFrame = 0;
         player->isRunning = false;
     }
+    
     // 限制玩家不能超出背景範圍
     if (player->position.x < 0) player->position.x = 0;
     if (player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
+
     //跳躍
     if (IsKeyPressed(KEY_W) && !player->isJumping) {
         player->velocityY = JUMP_STRENGTH;  
@@ -65,6 +95,15 @@ void player_move(Player *player){
         player->position.y = GROUND_Y;
         player->velocityY = 0;
         player->isJumping = false;  
+    }
+
+    // 更新碰撞矩形
+    playerRect = player_hitbox(player);
+
+    // 撞到牆底
+    if (stage == 1 && CheckCollisionRecs(playerRect, stage1_wall) && player->velocityY < 0) {
+        player->position.y = stage1_wall.y + stage1_wall.height;  
+        player->velocityY = 0;
     }
 }
 
@@ -168,6 +207,9 @@ void player_draw(Player *player){
             (Vector2){ 0, 0 }, 0.0f, WHITE
         );
     }
+
+    Rectangle hitbox = player_hitbox(player);
+    DrawRectangleLinesEx(hitbox, 2, (Color){255, 0, 0, 180});
 }
 
 void player_unload(Player *player) {

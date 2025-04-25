@@ -62,7 +62,7 @@ int main() {
         } 
         else if (currentGameState == GAME) {
             if (stage == 1){
-                player_move(&player);
+                player_move(&player,stage);
                 camX = player.position.x;
                 //使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;

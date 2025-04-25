@@ -3,6 +3,10 @@
 
 #include "raylib.h"
 
+#define playerWidth 140
+#define playerHeight 310
+#define playerXoffset 50
+#define playerYoffset 15
 #define MAX_BULLETS 100 // 螢幕可容納最多子彈
 #define BULLET_SPEED 20
 #define GRAVITY 0.5f   //  模擬重力
@@ -37,8 +41,9 @@ typedef struct {
 
 extern Bullet bullets[MAX_BULLETS];
 
+Rectangle player_hitbox(Player *player);
 void player_init(Player *player);            // 玩家初始化（載入圖片、設定初始狀態）
-void player_move(Player *player);            // 玩家移動與跳躍控制（含動畫）
+void player_move(Player *player,int stage);            // 玩家移動與跳躍控制（含動畫）
 void player_reload(Player *player);          // 玩家換彈邏輯（倒數 reload 時間）
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
 void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
