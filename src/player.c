@@ -208,8 +208,7 @@ void player_draw(Player *player){
         );
     }
 
-    Rectangle hitbox = player_hitbox(player);
-    DrawRectangleLinesEx(hitbox, 2, (Color){255, 0, 0, 180});
+    
 }
 
 void player_unload(Player *player) {
@@ -220,4 +219,9 @@ void player_unload(Player *player) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         bullets[i].active = false;
     }
+}
+
+void player_drawhitbox(Player *player){
+    Rectangle hitbox = player_hitbox(player);
+    DrawRectangleLinesEx(hitbox, 2, (Color){255, 0, 0, 180});
 }

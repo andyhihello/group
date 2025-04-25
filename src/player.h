@@ -50,6 +50,6 @@ void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產
 void player_drawbullet(Camera2D camera);                // 子彈移動與繪製
 void player_draw(Player *player);            // 玩家角色繪製（靜止 / 跑步動畫）
 void player_unload(Player *player);          // 釋放玩家資源（貼圖）
-
+void player_drawhitbox(Player *player);      //debug
 
 #endif

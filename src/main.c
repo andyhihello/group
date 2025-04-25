@@ -28,6 +28,7 @@ int main() {
     float camX = player.position.x;
     float halfScreen = screenWidth / 2.0f;
     int stage = 1;
+    int debug = false;
 
     //檢查圖片載入
     bool loadError = false;
@@ -55,7 +56,9 @@ int main() {
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
-        
+
+        if (IsKeyPressed(KEY_H)) debug = (debug +1)%2;
+
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
             updateMenu(&currentGameState); 
@@ -90,7 +93,11 @@ int main() {
                     DrawTexture(stage1_background[i], i * stage1pictureWidth, 0, WHITE);
                 }
                 player_draw(&player);
-                player_drawbullet(camera);       
+                player_drawbullet(camera); 
+
+                if(debug){
+                    player_drawhitbox(&player);
+                }     
             }
             EndMode2D();
             player_UI(&player);
