@@ -4,29 +4,31 @@
 Bullet bullets[MAX_BULLETS] = { 0 };
 
 
-void Initplayer(Player *player){
+void player_init(Player *player){
     // 載入圖片
     player->stand = LoadTexture("resource/player/stand.png");
+    if (player->stand.id == 0) {
+        TraceLog(LOG_ERROR, "stand.png 載入失敗！");
+    }
     //奔跑動畫載入
-    player->runFrames[0] = LoadTexture("resource/player/run1.png");
-    player->runFrames[1] = LoadTexture("resource/player/run2.png");
-    player->runFrames[2] = LoadTexture("resource/player/run3.png");
-    player->runFrames[3] = LoadTexture("resource/player/run4.png");
-    player->runFrames[4] = LoadTexture("resource/player/run5.png");
-    player->runFrames[5] = LoadTexture("resource/player/run4.png");
-    player->runFrames[6] = LoadTexture("resource/player/run3.png");
-    player->runFrames[7] = LoadTexture("resource/player/run2.png");
-    player->runFrames[8] = LoadTexture("resource/player/run1.png");
+    for (int i = 0; i < 9; i++) {
+        char path[100];
+        sprintf(path, "resource/player/run%d.png", (i < 5) ? (i + 1) : (9 - i));
+        player->runFrames[i] = LoadTexture(path);
+        if (player->runFrames[i].id == 0) {
+            TraceLog(LOG_ERROR, "%s 載入失敗！", path);
+        }
+    }
     // 設定腳色初始設定
     player->position = (Vector2){400, 100};
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
-    player->ammo = 10;
-    player->maxAmmo = 10;
-    player->speed = 5;
+    player->ammo = 100;
+    player->maxAmmo = 100;
+    player->speed = 7;
 }
 
-void Moveplayer(Player *player){
+void player_move(Player *player){
     
     if (IsKeyDown(KEY_A)) {
         player->position.x -= player->speed;
@@ -66,7 +68,7 @@ void Moveplayer(Player *player){
     }
 }
 
-void reload(Player *player){
+void player_reload(Player *player){
     // 換彈倒數
     if (player->reloadTimeLeft > 0) player->reloadTimeLeft -= GetFrameTime(); // 每幀減少時間
 
@@ -77,7 +79,7 @@ void reload(Player *player){
     }
 }
 
-void attrackdata(Player *player){
+void player_UI(Player *player){
    
     char ammoText[20];
     snprintf(ammoText, sizeof(ammoText), "Ammo: %d/%d", player->ammo, player->maxAmmo);
@@ -91,7 +93,7 @@ void attrackdata(Player *player){
     }
 }
 
-void playerattrack(Player *player){
+void player_attack(Player *player,Camera2D camera){
     Vector2 fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
 
     // 換彈邏輯：按 R 鍵開始換彈
@@ -100,14 +102,14 @@ void playerattrack(Player *player){
         player->reloading = true;
     }
 
-    if(player->reloading) reload(player);
+    if(player->reloading) player_reload(player);
  
     //射擊(按左鍵)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (!bullets[i].active) {
-                Vector2 mouse = GetMousePosition();
+                Vector2 mouse = GetScreenToWorld2D(GetMousePosition(), camera);
                 Vector2 direction = { mouse.x - fireOrigin.x, mouse.y - fireOrigin.y };
                 float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
                 if (length > 0) {  // avoid x/0 error
@@ -126,17 +128,54 @@ void playerattrack(Player *player){
 
 }
 
-void drawplayerbullet(){
+void player_drawbullet(Camera2D camera) {
+    // 計算鏡頭的視野範圍（世界座標）
+    Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
+    Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
+
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].active) {
+            // 子彈位置更新
             bullets[i].position.x += bullets[i].speed.x;
             bullets[i].position.y += bullets[i].speed.y;
-            //子彈超出畫面清除
-            if (bullets[i].position.x < 0 || bullets[i].position.x > screenWidth ||
+
+            // 判斷是否超出世界地圖範圍（不會因為鏡頭而判斷錯誤）
+            if (bullets[i].position.x < 0 || bullets[i].position.x > stage1Width ||
                 bullets[i].position.y < 0 || bullets[i].position.y > screenHeight) {
                 bullets[i].active = false;
+                continue;
             }
-            if (bullets[i].active) DrawCircleV(bullets[i].position, 10, RED);
+
+            // 只在鏡頭視野範圍內才繪製
+            if (bullets[i].position.x >= screenTopLeft.x && bullets[i].position.x <= screenBottomRight.x &&
+                bullets[i].position.y >= screenTopLeft.y && bullets[i].position.y <= screenBottomRight.y) {
+                DrawCircleV(bullets[i].position, 10, RED);
+            }
         }
+    }
+}
+
+void player_draw(Player *player){
+    Texture2D frame = player->isRunning ? player->runFrames[player->currentFrame] : player->stand;
+    if (player->facingRight) {
+        DrawTextureV(frame, player->position, WHITE);
+    } 
+    else {
+        DrawTexturePro(
+            frame,
+            (Rectangle){ 0, 0, (float)-frame.width, (float)frame.height },  // 負寬度實現鏡像
+            (Rectangle){ player->position.x, player->position.y, (float)frame.width, (float)frame.height },
+            (Vector2){ 0, 0 }, 0.0f, WHITE
+        );
+    }
+}
+
+void player_unload(Player *player) {
+    UnloadTexture(player->stand);
+    for (int i = 0; i < 9; i++) {
+        UnloadTexture(player->runFrames[i]);
+    }
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        bullets[i].active = false;
     }
 }
