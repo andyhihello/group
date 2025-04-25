@@ -1,10 +1,10 @@
 
 #include "player.h"
 #include "main.h"
-Bullet bullets[MAX_BULLETS] = { 0 };
+Rectangle stage1_wall = { 9010, 0, 70, 455 };
 
-Rectangle player_hitbox(Player *player) {
-    return (Rectangle){
+void player_hitbox(Player *player) {
+    player->hitbox = (Rectangle){
         player->position.x + playerXoffset,
         player->position.y + playerYoffset,
         playerWidth,
@@ -29,26 +29,25 @@ void player_init(Player *player){
     }
     // 設定腳色初始設定
     player->position = (Vector2){8500, 100};
+    memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
-    player->ammo = 100;
-    player->maxAmmo = 100;
+    player->ammo = 50;
+    player->maxAmmo = 50;
     player->speed = 6;
 }
 
 void player_move(Player *player,int stage){
-    Rectangle stage1_wall = { 9010, 0, 70, 455 }; //牆位置與大小
-    Rectangle playerRect; // 更新玩家碰撞矩形
-    
+
     // 左移
     if (IsKeyDown(KEY_A)) {
         player->position.x -= player->speed;
 
         // 更新玩家碰撞矩形
-        playerRect = player_hitbox(player);
+        player_hitbox(player);
 
         // 如果碰到牆，就把角色卡在牆的右側
-        if(stage == 1 && CheckCollisionRecs(playerRect, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
+        if(stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
 
         player->facingRight = false;
     }
@@ -58,10 +57,10 @@ void player_move(Player *player,int stage){
         player->position.x += player->speed;
 
         // 更新玩家碰撞矩形
-        playerRect = player_hitbox(player); 
+        player_hitbox(player); 
 
         // 如果碰到牆，就把角色卡在牆的左側
-        if(stage == 1 && CheckCollisionRecs(playerRect, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
+        if(stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
 
         player->facingRight = true;
     }
@@ -98,10 +97,10 @@ void player_move(Player *player,int stage){
     }
 
     // 更新碰撞矩形
-    playerRect = player_hitbox(player);
+    player_hitbox(player); 
 
     // 撞到牆底
-    if (stage == 1 && CheckCollisionRecs(playerRect, stage1_wall) && player->velocityY < 0) {
+    if (stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
         player->position.y = stage1_wall.y + stage1_wall.height;  
         player->velocityY = 0;
     }
@@ -147,7 +146,7 @@ void player_attack(Player *player,Camera2D camera){
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
-            if (!bullets[i].active) {
+            if (!player->bullets[i].active) {
                 Vector2 mouse = GetScreenToWorld2D(GetMousePosition(), camera);
                 Vector2 direction = { mouse.x - fireOrigin.x, mouse.y - fireOrigin.y };
                 float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
@@ -156,9 +155,9 @@ void player_attack(Player *player,Camera2D camera){
                     direction.y /= length;
                 }
 
-                bullets[i].position = fireOrigin;
-                bullets[i].speed = (Vector2){ direction.x * BULLET_SPEED, direction.y * BULLET_SPEED };
-                bullets[i].active = true;
+                player->bullets[i].position = fireOrigin;
+                player->bullets[i].speed = (Vector2){ direction.x * BULLET_SPEED, direction.y * BULLET_SPEED };
+                player->bullets[i].active = true;
                 player->ammo--;
                 break;
             }
@@ -167,28 +166,31 @@ void player_attack(Player *player,Camera2D camera){
 
 }
 
-void player_drawbullet(Camera2D camera) {
+void player_drawbullet(Player *player, Camera2D camera,int stage) {
     // 計算鏡頭的視野範圍（世界座標）
+    int sceneWidth;
+    if(stage == 1) sceneWidth = stage1Width;
     Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
     Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 
     for (int i = 0; i < MAX_BULLETS; i++) {
-        if (bullets[i].active) {
-            // 子彈位置更新
-            bullets[i].position.x += bullets[i].speed.x;
-            bullets[i].position.y += bullets[i].speed.y;
+        Rectangle bulletRect = { player->bullets[i].position.x, player->bullets[i].position.y, SIZE_BULLET, SIZE_BULLET};
+        if (player->bullets[i].active) {
+            player->bullets[i].position.x += player->bullets[i].speed.x;
+            player->bullets[i].position.y += player->bullets[i].speed.y;
 
-            // 判斷是否超出世界地圖範圍（不會因為鏡頭而判斷錯誤）
-            if (bullets[i].position.x < 0 || bullets[i].position.x > stage1Width ||
-                bullets[i].position.y < 0 || bullets[i].position.y > screenHeight) {
-                bullets[i].active = false;
+            // 超出地圖範圍，停用子彈
+            if (player->bullets[i].position.x < 0 || player->bullets[i].position.x > sceneWidth ||
+                player->bullets[i].position.y < 0 || player->bullets[i].position.y > screenHeight || 
+                (stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
+                player->bullets[i].active = false;
                 continue;
             }
 
-            // 只在鏡頭視野範圍內才繪製
-            if (bullets[i].position.x >= screenTopLeft.x && bullets[i].position.x <= screenBottomRight.x &&
-                bullets[i].position.y >= screenTopLeft.y && bullets[i].position.y <= screenBottomRight.y) {
-                DrawCircleV(bullets[i].position, 10, RED);
+            // 在畫面內才繪製
+            if (player->bullets[i].position.x >= screenTopLeft.x && player->bullets[i].position.x <= screenBottomRight.x &&
+                player->bullets[i].position.y >= screenTopLeft.y && player->bullets[i].position.y <= screenBottomRight.y) {
+                DrawCircleV(player->bullets[i].position, SIZE_BULLET, RED);
             }
         }
     }
@@ -217,11 +219,10 @@ void player_unload(Player *player) {
         UnloadTexture(player->runFrames[i]);
     }
     for (int i = 0; i < MAX_BULLETS; i++) {
-        bullets[i].active = false;
+        player->bullets[i].active = false;
     }
 }
 
 void player_drawhitbox(Player *player){
-    Rectangle hitbox = player_hitbox(player);
-    DrawRectangleLinesEx(hitbox, 2, (Color){255, 0, 0, 180});
+    DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
 }

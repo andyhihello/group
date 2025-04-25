@@ -93,7 +93,7 @@ int main() {
                     DrawTexture(stage1_background[i], i * stage1pictureWidth, 0, WHITE);
                 }
                 player_draw(&player);
-                player_drawbullet(camera); 
+                player_drawbullet(&player,camera,stage); 
 
                 if(debug){
                     player_drawhitbox(&player);
