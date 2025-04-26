@@ -1,4 +1,3 @@
-
 #include "player.h"
 #include "main.h"
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
@@ -28,16 +27,18 @@ void player_init(Player *player){
         }
     }
     // 設定腳色初始設定
-    player->position = (Vector2){8500, 100};
+    player->position = (Vector2){14300, 300};
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
     player->ammo = 50;
     player->maxAmmo = 50;
     player->speed = 6;
+    player->stage = 1;
+    player->tutorial = 1;
 }
 
-void player_move(Player *player,int stage){
+void player_move(Player *player){
 
     // 左移
     if (IsKeyDown(KEY_A)) {
@@ -47,7 +48,7 @@ void player_move(Player *player,int stage){
         player_hitbox(player);
 
         // 如果碰到牆，就把角色卡在牆的右側
-        if(stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
+        if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
 
         player->facingRight = false;
     }
@@ -60,7 +61,7 @@ void player_move(Player *player,int stage){
         player_hitbox(player); 
 
         // 如果碰到牆，就把角色卡在牆的左側
-        if(stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
+        if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
 
         player->facingRight = true;
     }
@@ -80,7 +81,7 @@ void player_move(Player *player,int stage){
     }
     
     // 限制玩家不能超出背景範圍
-    if (player->position.x < 0) player->position.x = 0;
+    if (player->position.x < -50) player->position.x = -50;
     if (player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
 
     //跳躍
@@ -100,7 +101,7 @@ void player_move(Player *player,int stage){
     player_hitbox(player); 
 
     // 撞到牆底
-    if (stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
+    if (player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
         player->position.y = stage1_wall.y + stage1_wall.height;  
         player->velocityY = 0;
     }
@@ -166,10 +167,10 @@ void player_attack(Player *player,Camera2D camera){
 
 }
 
-void player_drawbullet(Player *player, Camera2D camera,int stage) {
+void player_drawbullet(Player *player, Camera2D camera) {
     // 計算鏡頭的視野範圍（世界座標）
     int sceneWidth;
-    if(stage == 1) sceneWidth = stage1Width;
+    if(player->stage == 1) sceneWidth = stage1Width;
     Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
     Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 
@@ -182,7 +183,7 @@ void player_drawbullet(Player *player, Camera2D camera,int stage) {
             // 超出地圖範圍，停用子彈
             if (player->bullets[i].position.x < 0 || player->bullets[i].position.x > sceneWidth ||
                 player->bullets[i].position.y < 0 || player->bullets[i].position.y > screenHeight || 
-                (stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
+                (player->stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
                 player->bullets[i].active = false;
                 continue;
             }

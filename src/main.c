@@ -2,6 +2,7 @@
 #include "menu.h" 
 #include "main.h"
 #include "player.h"
+#include "stage1.h"
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
@@ -23,12 +24,11 @@ int main() {
     player_init(&player);
     Camera2D camera = { 0 };
     camera.target = player.position;
-    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
+    camera.offset = (Vector2){ screenWidth * 0.2f, screenHeight / 2.0f };
     camera.zoom = 1.0f;
     float camX = player.position.x;
-    float halfScreen = screenWidth / 2.0f;
-    int stage = 1;
-    int debug = false;
+    float halfScreen = screenWidth * 0.2f;
+    int debug = 0;
 
     //檢查圖片載入
     bool loadError = false;
@@ -57,22 +57,32 @@ int main() {
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
 
-        if (IsKeyPressed(KEY_H)) debug = (debug +1)%2;
-
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
             updateMenu(&currentGameState); 
         } 
+
         else if (currentGameState == GAME) {
-            if (stage == 1){
-                player_move(&player,stage);
+            if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
+            if (player.stage == 1){
+                player_move(&player);
                 camX = player.position.x;
                 //使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
-                if (camX > stage1Width - halfScreen) camX = stage1Width - halfScreen;
+                if (camX > stage1Width - screenWidth * 0.8f) camX = stage1Width - screenWidth * 0.8f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
+                stage1_door(&player);
             }
+
+            if(player.tutorial){
+                if (IsKeyPressed(KEY_SPACE)) {
+                    player.tutorial++;
+                    if(player.tutorial == 3)player.tutorial = false; 
+                }
+            }
+
+
         } 
         else if (currentGameState == SETTINGS) {
             // 設定邏輯
@@ -87,20 +97,32 @@ int main() {
             drawMenu();
         } 
         else if (currentGameState == GAME) {
+
             BeginMode2D(camera);
-            if (stage == 1){
+            if (player.stage == 1){
                 for (int i = 0; i < stage1backgroundCount; i++) {
                     DrawTexture(stage1_background[i], i * stage1pictureWidth, 0, WHITE);
                 }
+
+                stage1_drawdoortext(); 
                 player_draw(&player);
-                player_drawbullet(&player,camera,stage); 
+                player_drawbullet(&player,camera);
+                
 
                 if(debug){
                     player_drawhitbox(&player);
+                    stage1_drawhitbox();
                 }     
             }
             EndMode2D();
-            player_UI(&player);
+
+            player_UI(&player);           
+            if(player.tutorial){
+                stage1_drawtutorial(&player);
+            }
+            if(debug){
+                
+            }
         } 
         else if (currentGameState == SETTINGS) {
             // 在這裡繪製設定畫面

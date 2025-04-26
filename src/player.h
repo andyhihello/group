@@ -40,15 +40,18 @@ typedef struct {
     float frameTimer;         // 控制動畫播放速度
     bool isRunning;           // 是否奔跑中
     bool facingRight;         // 角色朝向（true：朝右，false：朝左）
+
+    int tutorial;
+    int stage;
 } Player;
 
 void player_hitbox(Player *player);
 void player_init(Player *player);            // 玩家初始化（載入圖片、設定初始狀態）
-void player_move(Player *player,int stage);            // 玩家移動與跳躍控制（含動畫）
+void player_move(Player *player);            // 玩家移動與跳躍控制（含動畫）
 void player_reload(Player *player);          // 玩家換彈邏輯（倒數 reload 時間）
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
 void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
-void player_drawbullet(Player *player, Camera2D camera,int stage);              // 子彈移動與繪製
+void player_drawbullet(Player *player, Camera2D camera);              // 子彈移動與繪製
 void player_draw(Player *player);            // 玩家角色繪製（靜止 / 跑步動畫）
 void player_unload(Player *player);          // 釋放玩家資源（貼圖）
 void player_drawhitbox(Player *player);      //debug

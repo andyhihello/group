@@ -8,6 +8,7 @@
 #include <math.h>
 #include <string.h>
 
+
 #define screenWidth 1600
 #define screenHeight 900
 #define stage1backgroundCount 5
