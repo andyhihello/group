@@ -2,7 +2,7 @@
 #include "menu.h" 
 #include "main.h"
 #include "player.h"
-#include "stage1.h"
+#include "stage.h"
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
@@ -72,7 +72,7 @@ int main() {
                 if (camX > stage1Width - screenWidth * 0.8f) camX = stage1Width - screenWidth * 0.8f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
-                stage1_door(&player);
+                stage_door(&player);
             }
 
             if(player.tutorial){
@@ -104,21 +104,21 @@ int main() {
                     DrawTexture(stage1_background[i], i * stage1pictureWidth, 0, WHITE);
                 }
 
-                stage1_drawdoortext(); 
+                stage_drawdoortext(); 
                 player_draw(&player);
                 player_drawbullet(&player,camera);
                 
 
                 if(debug){
                     player_drawhitbox(&player);
-                    stage1_drawhitbox();
+                    stage_drawhitbox();
                 }     
             }
             EndMode2D();
 
             player_UI(&player);           
             if(player.tutorial){
-                stage1_drawtutorial(&player);
+                stage_drawtutorial(&player);
             }
             if(debug){
                 

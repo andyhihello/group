@@ -1,8 +1,8 @@
 #include "main.h"
-#include "stage1.h"
+#include "stage.h"
 
 
-void stage1_drawtutorial(Player *player) {
+void stage_drawtutorial(Player *player) {
     // 背景半透明遮罩
     int boxWidth = 1200;
     int boxHeight = 300;
@@ -39,18 +39,18 @@ void stage1_drawtutorial(Player *player) {
     DrawText(continueText, boxX + boxWidth - MeasureText(continueText, 25) -20 , boxY + boxHeight - 30, 25, GREEN);
 }
 
-void stage1_door(Player *player){
+void stage_door(Player *player){
     Rectangle stage1_door = { 14050, 0, 480, 900 };
     if(CheckCollisionRecs(player->hitbox, stage1_door) && IsKeyPressed(KEY_SPACE)){
         player->stage = 2;
     }
 }
 
-void stage1_drawdoortext(){
+void stage_drawdoortext(){
     DrawText("Press SPACE to enter", 14150, 100, 25, WHITE);
 }
 
-void stage1_drawhitbox(){
+void stage_drawhitbox(){
     Rectangle stage1_door = { 14050, 0, 480, 900 };
     DrawRectangleLinesEx(stage1_door, 2, (Color){255, 0, 0, 180});
 }
