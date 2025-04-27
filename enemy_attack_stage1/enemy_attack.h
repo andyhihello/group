@@ -1,6 +1,5 @@
 /**
  * enemy_attack.h - Header file for enemy attack system
- * Theme: "Nothing can go wrong..."
  */
 
 #ifndef ENEMY_ATTACK_H
