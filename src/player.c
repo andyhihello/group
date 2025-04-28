@@ -27,22 +27,23 @@ void player_init(Player *player){
         }
     }
     // 設定腳色初始設定
-    player->position = (Vector2){14300, 300};
+    player->position = (Vector2){300, 300};
+    player->hp = 10;
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
     player->ammo = 50;
     player->maxAmmo = 50;
-    player->speed = 6;
+    player->speed = 300;
     player->stage = 1;
-    player->tutorial = 1;
+    player->tutorial = 0;
 }
 
-void player_move(Player *player){
+void player_move(Player *player,float deltaTime){
 
     // 左移
     if (IsKeyDown(KEY_A)) {
-        player->position.x -= player->speed;
+        player->position.x -= player->speed * deltaTime;
 
         // 更新玩家碰撞矩形
         player_hitbox(player);
@@ -55,7 +56,7 @@ void player_move(Player *player){
 
     // 右移
     if (IsKeyDown(KEY_D)) {
-        player->position.x += player->speed;
+        player->position.x += player->speed * deltaTime;
 
         // 更新玩家碰撞矩形
         player_hitbox(player); 
@@ -89,7 +90,7 @@ void player_move(Player *player){
         player->velocityY = JUMP_STRENGTH;  
         player->isJumping = true;
     }
-    player->position.y += player->velocityY;
+    player->position.y += player->velocityY * deltaTime ;
     player->velocityY += GRAVITY;  
     if (player->position.y > GROUND_Y) {
         player->position.y = GROUND_Y;
@@ -157,6 +158,7 @@ void player_attack(Player *player,Camera2D camera){
                 }
 
                 player->bullets[i].position = fireOrigin;
+                player->bullets[i].startPosition = fireOrigin;
                 player->bullets[i].speed = (Vector2){ direction.x * BULLET_SPEED, direction.y * BULLET_SPEED };
                 player->bullets[i].active = true;
                 player->ammo--;
@@ -188,6 +190,13 @@ void player_drawbullet(Player *player, Camera2D camera) {
                 continue;
             }
 
+            float dx = player->bullets[i].position.x - player->bullets[i].startPosition.x;
+            float dy = player->bullets[i].position.y - player->bullets[i].startPosition.y;
+            float distance = sqrtf(dx * dx + dy * dy);
+            if (distance >= 600.0f) {
+                player->bullets[i].active = false;
+                continue;
+            }
             // 在畫面內才繪製
             if (player->bullets[i].position.x >= screenTopLeft.x && player->bullets[i].position.x <= screenBottomRight.x &&
                 player->bullets[i].position.y >= screenTopLeft.y && player->bullets[i].position.y <= screenBottomRight.y) {

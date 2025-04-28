@@ -3,6 +3,7 @@
 #include "main.h"
 #include "player.h"
 #include "stage.h"
+#include "enemy.h"
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
@@ -19,15 +20,20 @@ int main() {
 
     // 初始化
     initMenu(menu_background);
-    GameState currentGameState = MENU;
+    GameState currentGameState = GAME;
     Player player;
+    Drone drone;
+    Soldier soldier;
     player_init(&player);
+    enemy_initDrone(&drone);
+    enemy_initSoldier(&soldier);
     Camera2D camera = { 0 };
     camera.target = player.position;
-    camera.offset = (Vector2){ screenWidth * 0.2f, screenHeight / 2.0f };
+    camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
     camera.zoom = 1.0f;
     float camX = player.position.x;
-    float halfScreen = screenWidth * 0.2f;
+    float halfScreen = screenWidth * 0.4f;
+
     int debug = 0;
 
     //檢查圖片載入
@@ -56,6 +62,7 @@ int main() {
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
+        float deltaTime = GetFrameTime();
 
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
@@ -65,11 +72,13 @@ int main() {
         else if (currentGameState == GAME) {
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
             if (player.stage == 1){
-                player_move(&player);
+                 player_move(&player, deltaTime);    
+                enemy_updateDrone(&drone, &player, deltaTime); 
+                enemy_updateSoldier(&soldier, &player, deltaTime); 
                 camX = player.position.x;
                 //使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
-                if (camX > stage1Width - screenWidth * 0.8f) camX = stage1Width - screenWidth * 0.8f;
+                if (camX > stage1Width - screenWidth * 0.6f) camX = stage1Width - screenWidth * 0.6f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
                 stage_door(&player);
@@ -106,11 +115,14 @@ int main() {
 
                 stage_drawdoortext(); 
                 player_draw(&player);
+                enemy_drawDrone(&drone);
+                enemy_drawLaser(&drone);
                 player_drawbullet(&player,camera);
                 
                 if(debug){
                     player_drawhitbox(&player);
                     stage_drawhitbox();
+                    enemy_hitbox(&drone);
                 }     
             }
             EndMode2D();

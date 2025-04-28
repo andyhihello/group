@@ -1,18 +1,25 @@
 #include "enemy.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-// 定義圓周率常數（若標準庫未定義）
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#include "main.h"
+ 
 
 // 計算兩點之間的距離
 float enemy_distance(Vector2 p1, Vector2 p2) {
     float dx = p2.x - p1.x;
     float dy = p2.y - p1.y;
     return sqrt(dx * dx + dy * dy);
+}
+
+float enemy_distanceX(Vector2 p1, Vector2 p2) {
+    return fabs(p2.x - p1.x);  // fabs 是浮點數絕對值
+}
+
+Rectangle enemy_Dronehitbox(Drone *drone) {
+    return (Rectangle){
+        drone->position.x + 120,  
+        drone->position.y + 120,  
+        200,                   
+        530                     
+    };
 }
 
 // 將向量標準化（單位向量）
@@ -27,16 +34,27 @@ Vector2 enemy_normalizeVector(Vector2 v) {
 }
 
 // 初始化無人機敵人（Security Drone）
-void enemy_initSecurityDrone(SecurityDrone* drone, float x, float y) {
-    if (drone == NULL) return;
-    drone->position = (Vector2){x, y};
+void enemy_initDrone(Drone* drone) {
+    char path[100];
+    for (int i = 0; i < 5; i++) {       
+        sprintf(path, "resource/drone/patrol%d.png", (i < 2) ? (i + 1) : (5 - i));
+        drone->patrolFrames[i] = LoadTexture(path);
+    }
+    for (int i = 0; i < 9; i++) {
+        sprintf(path, "resource/drone/chase%d.png", (i < 5) ? (i + 1) : (9 - i));
+        drone->chaseFrames[i] = LoadTexture(path);
+    }
+    drone->attackFrames= LoadTexture("resource/drone/attack.png");
+    drone->laserFrame = LoadTexture("resource/drone/laser.png");
+
+    drone->active = true;
+    drone->position = (Vector2){1000, 300};
     drone->health = 100.0f;
     drone->attackCooldown = 2.0f;           // 每2秒攻擊一次
     drone->timeSinceLastAttack = 0.0f;
     drone->type = SECURITY_DRONE;
     drone->laser = (LaserShot){0};
     drone->laser.damage = 25.0f;            // 雷射傷害
-    drone->laser.width = 5.0f;              // 雷射寬度
     drone->laser.duration = 0.5f;           // 雷射持續時間
     drone->laser.active = false;
 }
@@ -63,29 +81,47 @@ void enemy_initSoldier(Soldier* soldier) {
     }
 }
 
+
 // 無人機發射雷射（朝向玩家）
-void enemy_securityDroneFireLaser(SecurityDrone* drone, Vector2 playerPosition) {
-    if (drone == NULL) return;
+void enemy_DroneFireLaser(Drone* drone, Player *player) {
+    if (!drone->active) return;
+
     drone->laser.start = drone->position;
-    Vector2 direction = enemy_normalizeVector((Vector2){
-        playerPosition.x - drone->position.x,
-        playerPosition.y - drone->position.y
-    });
-    float laserLength = 1000.0f;
-    drone->laser.end = (Vector2){
-        drone->position.x + direction.x * laserLength,
-        drone->position.y + direction.y * laserLength
-    };
+
+    // 固定雷射發射的高度（例如：無人機身體中間）
+    float laserWidth = 563.0f;
+    float laserHeight = 79.0f;
+    float fixedLaserY = drone->position.y + 400;  // 這裡是固定高度（可調整）
+
+    // 判斷玩家在左還是右
+    if (player->hitbox.x + player->hitbox.width / 2 > drone->laser.start.x) {
+        // 向右射擊
+        drone->laserhitbox = (Rectangle){
+            drone->laser.start.x + drone->hitbox.width + drone->hitbox.width /2,
+            fixedLaserY,
+            laserWidth,
+            laserHeight
+        };
+    } else {
+        // 向左射擊
+        drone->laserhitbox = (Rectangle){
+            drone->laser.start.x - laserWidth + drone->hitbox.width - drone->hitbox.width /2,
+            fixedLaserY,
+            laserWidth,
+            laserHeight
+        };
+    }
+
     drone->laser.active = true;
     drone->laser.timeActive = 0.0f;
 }
 
 // 機器人士兵發射散彈（向玩家，三向散射）
-void enemy_robotSoldierFireScatterShot(RobotSoldier* soldier, Vector2 playerPosition) {
-    if (soldier == NULL) return;
+void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player) {
+    if (soldier->active == false) return;
     Vector2 baseDirection = enemy_normalizeVector((Vector2){
-        playerPosition.x - soldier->position.x,
-        playerPosition.y - soldier->position.y
+        player->position.x - soldier->position.x,
+        player->position.y - soldier->position.y
     });
     float baseAngle = atan2(baseDirection.y, baseDirection.x);
     for (int i = 0; i < 3; i++) {
@@ -101,45 +137,29 @@ void enemy_robotSoldierFireScatterShot(RobotSoldier* soldier, Vector2 playerPosi
 }
 
 // 判斷雷射是否擊中玩家
-bool enemy_checkLaserHit(LaserShot* laser, Vector2 playerPosition, float playerRadius) {
-    if (laser == NULL || !laser->active) return false;
-    Vector2 lineVector = {
-        laser->end.x - laser->start.x,
-        laser->end.y - laser->start.y
-    };
-    Vector2 pointVector = {
-        playerPosition.x - laser->start.x,
-        playerPosition.y - laser->start.y
-    };
-    float lineLength = sqrt(lineVector.x * lineVector.x + lineVector.y * lineVector.y);
-    if (lineLength < 0.001f) {
-        return enemy_distance(laser->start, playerPosition) <= playerRadius + laser->width / 2;
+void enemy_laserDamagePlayer(Drone *drone, Player *player) {
+    if (CheckCollisionRecs(drone->laserhitbox, player->hitbox)) {
+        player->hp -= drone->laser.damage;
     }
-    lineVector.x /= lineLength;
-    lineVector.y /= lineLength;
-    float projection = pointVector.x * lineVector.x + pointVector.y * lineVector.y;
-    if (projection < 0) {
-        return enemy_distance(laser->start, playerPosition) <= playerRadius + laser->width / 2;
-    } else if (projection > lineLength) {
-        return enemy_distance(laser->end, playerPosition) <= playerRadius + laser->width / 2;
-    }
-    Vector2 closestPoint = {
-        laser->start.x + lineVector.x * projection,
-        laser->start.y + lineVector.y * projection
-    };
-    return enemy_distance(closestPoint, playerPosition) <= playerRadius + laser->width / 2;
 }
 
 // 判斷散彈是否擊中玩家
-bool enemy_checkBulletHit(ScatterBullet* bullet, Vector2 playerPosition, float playerRadius) {
-    if (bullet == NULL || !bullet->active) return false;
-    return enemy_distance(bullet->position, playerPosition) <= playerRadius;
+void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* soldier) {
+    if (bullet == NULL || !bullet->active) return;
+
+    float bulletRadius = 5.0f;  // 你子彈的半徑
+
+    if (CheckCollisionCircleRec(bullet->position, bulletRadius, player->hitbox)) {
+        float damage = enemy_calculateDistanceBasedDamage(bullet, player, soldier);
+        player->hp -= damage;
+        bullet->active = false;  // 子彈命中後消失
+    }
 }
 
 // 根據距離計算傷害
-float enemy_calculateDistanceBasedDamage(ScatterBullet* bullet, Vector2 playerPosition, RobotSoldier* soldier) {
+float enemy_calculateDistanceBasedDamage(ScatterBullet* bullet, Player *player, Soldier* soldier) {
     if (bullet == NULL || soldier == NULL) return 0.0f;
-    float dist = enemy_distance(bullet->position, playerPosition);
+    float dist = enemy_distance(bullet->position, player->position);
     if (dist <= soldier->maxDamageDistance) {
         return soldier->maxDamage;
     } else if (dist >= soldier->minDamageDistance) {
@@ -151,40 +171,159 @@ float enemy_calculateDistanceBasedDamage(ScatterBullet* bullet, Vector2 playerPo
 }
 
 // 更新無人機狀態（攻擊計時與雷射狀態）
-void enemy_updateSecurityDrone(SecurityDrone* drone, Vector2 playerPosition, float deltaTime) {
-    if (drone == NULL) return;
-    drone->timeSinceLastAttack += deltaTime;
-    if (drone->timeSinceLastAttack >= drone->attackCooldown) {
-        enemy_securityDroneFireLaser(drone, playerPosition);
-        drone->timeSinceLastAttack = 0.0f;
+void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
+    if (!drone->active) return;
+
+    Vector2 drone_center = {
+        drone->hitbox.x + drone->hitbox.width / 2,
+        drone->hitbox.y + drone->hitbox.height / 2
+    };
+
+    Vector2 player_center = {
+        player->hitbox.x + player->hitbox.width / 2,
+        player->hitbox.y + player->hitbox.height / 2
+    };
+
+    float dist = enemy_distanceX(drone_center, player_center);  // 只算 X 軸
+
+    EnemyState previousState = drone->state;  // 新增：記錄上一個狀態
+
+    // 狀態切換邏輯
+    if (dist > 800) {
+        drone->state = PATROL;
+    } else if (dist <= 800 && dist > 500) {
+        drone->state = CHASE;
+    } else if (dist <= 500) {
+        drone->state = ATTACK;
     }
+    
+    // 狀態改變時，重設動畫
+    if (drone->state != previousState) {
+        drone->currentFrame = 0;
+        drone->frameTimer = 0;
+    }
+
+    TraceLog(LOG_INFO, "%d",drone->state);
+
+    switch (drone->state) {
+        case PATROL:
+            drone->position.x += sin(GetTime()) * 4.0f;
+            break;
+        case CHASE:
+            if ((player->hitbox.x + player->hitbox.width / 2) > drone->position.x) {
+                drone->position.x += 200.0f * deltaTime;
+            } else {
+                drone->position.x -= 200.0f * deltaTime;
+            }
+            break;
+        case ATTACK:
+            drone->timeSinceLastAttack += deltaTime;
+            if (drone->timeSinceLastAttack >= drone->attackCooldown) {
+                enemy_DroneFireLaser(drone, player);
+                drone->timeSinceLastAttack = 0.0f;
+            }
+            break;
+    }
+
     if (drone->laser.active) {
         drone->laser.timeActive += deltaTime;
         if (drone->laser.timeActive >= drone->laser.duration) {
             drone->laser.active = false;
         }
     }
+    drone->hitbox = enemy_Dronehitbox(drone);
 }
 
 // 更新士兵狀態（攻擊計時與子彈移動）
-void enemy_updateRobotSoldier(RobotSoldier* soldier, Vector2 playerPosition, float deltaTime) {
-    if (soldier == NULL) return;
+void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime) {
+    if (soldier->active == false) return;
+    int sceneWidth;
+    if(player->stage == 1) sceneWidth = stage1Width;
     soldier->timeSinceLastAttack += deltaTime;
     if (soldier->timeSinceLastAttack >= soldier->attackCooldown) {
-        enemy_robotSoldierFireScatterShot(soldier, playerPosition);
+        enemy_SoldierFireScatterShot(soldier, player);
         soldier->timeSinceLastAttack = 0.0f;
     }
     for (int i = 0; i < 3; i++) {
         if (soldier->bullets[i].active) {
             soldier->bullets[i].position.x += soldier->bullets[i].direction.x * soldier->bullets[i].speed * deltaTime;
             soldier->bullets[i].position.y += soldier->bullets[i].direction.y * soldier->bullets[i].speed * deltaTime;
-            float screenBoundary = 1000.0f; // 調整為地圖大小
-            if (soldier->bullets[i].position.x < -screenBoundary ||
-                soldier->bullets[i].position.x > screenBoundary ||
-                soldier->bullets[i].position.y < -screenBoundary ||
-                soldier->bullets[i].position.y > screenBoundary) {
+            if (soldier->bullets[i].position.x < 0 ||
+                soldier->bullets[i].position.x > sceneWidth ||
+                soldier->bullets[i].position.y < 0 ||
+                soldier->bullets[i].position.y > screenHeight) {
                 soldier->bullets[i].active = false;
             }
         }
     }
+}
+
+void enemy_drawDrone(Drone* drone) {
+    Texture2D frame;
+
+    switch (drone->state) {
+        case PATROL:
+            frame = drone->patrolFrames[drone->currentFrame];
+            break;
+        case CHASE:
+            frame = drone->chaseFrames[drone->currentFrame];
+            break;
+        case ATTACK:
+            frame = drone->attackFrames;
+            break;
+    }
+
+    if (drone->state == PATROL) {
+        drone->frameTimer += GetFrameTime();
+        if (drone->frameTimer >= 0.1f) {
+            drone->currentFrame = (drone->currentFrame + 1) % 5;
+            drone->frameTimer = 0;
+        }
+    } 
+    else if (drone->state == CHASE) {
+        drone->frameTimer += GetFrameTime();
+        if (drone->frameTimer >= 0.1f) {
+            drone->currentFrame = (drone->currentFrame + 1) % 9;
+            drone->frameTimer = 0;
+        }
+    } 
+    else {
+        drone->currentFrame = 0;  // ATTACK 單張圖
+    }
+
+    DrawTextureV(frame, drone->position, WHITE);
+}
+
+void enemy_drawLaser(Drone* drone) {
+    if (drone->laser.active) {
+        Rectangle sourceRec = { 0, 0, (float)drone->laserFrame.width, (float)drone->laserFrame.height };
+        Rectangle destRec;
+
+        // 判斷朝向
+        if (drone->laser.end.x > drone->laser.start.x) { 
+            // 向右發射
+            destRec = (Rectangle){
+                drone->laser.start.x,
+                drone->laser.start.y,
+                drone->laser.end.x - drone->laser.start.x,  // 寬度 = 雷射長度
+                drone->laserFrame.height                   // 使用圖片原高
+            };
+            DrawTexturePro(drone->laserFrame, sourceRec, destRec, (Vector2){0, 0}, 0.0f, WHITE);
+        } else {
+            // 向左發射，需要水平翻轉
+            sourceRec.width = -sourceRec.width;  // 負值翻轉
+            destRec = (Rectangle){
+                drone->laser.end.x,
+                drone->laser.end.y,
+                drone->laser.start.x - drone->laser.end.x,  // 寬度
+                drone->laserFrame.height
+            };
+            DrawTexturePro(drone->laserFrame, sourceRec, destRec, (Vector2){0, 0}, 0.0f, WHITE);
+        }
+    }
+}
+
+void enemy_hitbox(Drone* drone){
+    DrawRectangleLinesEx(drone->hitbox, 2, RED);
+    DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
 }
