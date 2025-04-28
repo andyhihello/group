@@ -63,6 +63,7 @@ typedef struct {
     float timeSinceLastAttack;  // 距離上次攻擊經過的時間
     LaserShot laser;            // 雷射攻擊資料
     EnemyType type;             // 敵人類型
+    bool facingRight;
 
     EnemyState state;
     Texture2D patrolFrames[5];   
@@ -71,6 +72,7 @@ typedef struct {
     Texture2D laserFrame;
     int currentFrame;
     float frameTimer;
+    
 
 } Drone;
 

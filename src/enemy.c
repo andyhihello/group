@@ -88,10 +88,9 @@ void enemy_DroneFireLaser(Drone* drone, Player *player) {
 
     drone->laser.start = drone->position;
 
-    // 固定雷射發射的高度（例如：無人機身體中間）
     float laserWidth = 563.0f;
     float laserHeight = 79.0f;
-    float fixedLaserY = drone->position.y + 400;  // 這裡是固定高度（可調整）
+    float fixedLaserY = drone->position.y + 400;  
 
     // 判斷玩家在左還是右
     if (player->hitbox.x + player->hitbox.width / 2 > drone->laser.start.x) {
@@ -185,6 +184,8 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
     };
 
     float dist = enemy_distanceX(drone_center, player_center);  // 只算 X 軸
+
+    drone->facingRight = (player_center.x < drone_center.x);
 
     EnemyState previousState = drone->state;  // 新增：記錄上一個狀態
 
@@ -291,35 +292,29 @@ void enemy_drawDrone(Drone* drone) {
         drone->currentFrame = 0;  // ATTACK 單張圖
     }
 
-    DrawTextureV(frame, drone->position, WHITE);
+    Rectangle source = { 0, 0, (float)frame.width, (float)frame.height };
+    Rectangle dest = { drone->position.x, drone->position.y, (float)frame.width, (float)frame.height };
+    Vector2 origin = { 0, 0 };
+
+    // 根據 facingRight 決定是否左右翻轉
+    if (!drone->facingRight) {
+        source.width = -source.width;  // 翻轉圖像
+    }
+
+    DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
 }
 
 void enemy_drawLaser(Drone* drone) {
     if (drone->laser.active) {
-        Rectangle sourceRec = { 0, 0, (float)drone->laserFrame.width, (float)drone->laserFrame.height };
-        Rectangle destRec;
+        Rectangle source = { 0, 0, (float)drone->laserFrame.width, (float)drone->laserFrame.height };
+        Rectangle dest = drone->laserhitbox;
+        Vector2 origin = { 0, 0 };
 
-        // 判斷朝向
-        if (drone->laser.end.x > drone->laser.start.x) { 
-            // 向右發射
-            destRec = (Rectangle){
-                drone->laser.start.x,
-                drone->laser.start.y,
-                drone->laser.end.x - drone->laser.start.x,  // 寬度 = 雷射長度
-                drone->laserFrame.height                   // 使用圖片原高
-            };
-            DrawTexturePro(drone->laserFrame, sourceRec, destRec, (Vector2){0, 0}, 0.0f, WHITE);
-        } else {
-            // 向左發射，需要水平翻轉
-            sourceRec.width = -sourceRec.width;  // 負值翻轉
-            destRec = (Rectangle){
-                drone->laser.end.x,
-                drone->laser.end.y,
-                drone->laser.start.x - drone->laser.end.x,  // 寬度
-                drone->laserFrame.height
-            };
-            DrawTexturePro(drone->laserFrame, sourceRec, destRec, (Vector2){0, 0}, 0.0f, WHITE);
+        if (!drone->facingRight) {
+            source.width = -source.width;  // 左翻轉
         }
+
+        DrawTexturePro(drone->laserFrame, source, dest, origin, 0.0f, WHITE);
     }
 }
 
