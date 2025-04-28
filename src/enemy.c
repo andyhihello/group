@@ -42,9 +42,10 @@ void enemy_initSecurityDrone(SecurityDrone* drone, float x, float y) {
 }
 
 // 初始化機器人士兵（Robot Soldier）
-void enemy_initRobotSoldier(RobotSoldier* soldier, float x, float y) {
-    if (soldier == NULL) return;
-    soldier->position = (Vector2){x, y};
+void enemy_initSoldier(Soldier* soldier) {
+    
+    soldier->active = true;
+    soldier->position = (Vector2){2000, 500};
     soldier->health = 120.0f;
     soldier->attackCooldown = 3.0f;         // 每3秒攻擊一次
     soldier->timeSinceLastAttack = 0.0f;
