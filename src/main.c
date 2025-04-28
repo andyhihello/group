@@ -108,7 +108,6 @@ int main() {
                 player_draw(&player);
                 player_drawbullet(&player,camera);
                 
-
                 if(debug){
                     player_drawhitbox(&player);
                     stage_drawhitbox();
