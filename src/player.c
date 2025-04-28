@@ -28,7 +28,8 @@ void player_init(Player *player){
     }
     // 設定腳色初始設定
     player->position = (Vector2){300, 300};
-    player->hp = 10;
+    player->hp = 100;
+    player->damage = 20;
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
@@ -123,13 +124,17 @@ void player_UI(Player *player){
    
     char ammoText[20];
     snprintf(ammoText, sizeof(ammoText), "Ammo: %d/%d", player->ammo, player->maxAmmo);
-    DrawText(ammoText, 10, 30, 20, DARKGRAY);
+    DrawText(ammoText, 10, 30, 20, WHITE);
+
+    char hpText[20];
+    snprintf(hpText, sizeof(hpText), "HP: %d", player->hp);
+    DrawText(hpText, 10, 60, 20, WHITE);  // 位置在左上角，紅色字體
 
     // 顯示換彈倒數
     if (player->reloadTimeLeft > 0) {
         char reloadText[30];
         snprintf(reloadText, sizeof(reloadText), "Reloading... %.1f", player->reloadTimeLeft);
-        DrawText(reloadText, screenWidth - 200, 30, 20, DARKGRAY);
+        DrawText(reloadText, screenWidth - 200, 30, 20, WHITE);
     }
 }
 
@@ -193,7 +198,7 @@ void player_drawbullet(Player *player, Camera2D camera) {
             float dx = player->bullets[i].position.x - player->bullets[i].startPosition.x;
             float dy = player->bullets[i].position.y - player->bullets[i].startPosition.y;
             float distance = sqrtf(dx * dx + dy * dy);
-            if (distance >= 600.0f) {
+            if (distance >= 500.0f) {
                 player->bullets[i].active = false;
                 continue;
             }

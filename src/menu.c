@@ -1,6 +1,8 @@
 #include "menu.h"
 #include "main.h"
 
+
+
 // 選單內部使用的變數
 static Rectangle startButton;
 static Color startButtonColor = LIGHTGRAY;

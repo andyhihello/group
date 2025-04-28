@@ -5,6 +5,7 @@
 #include <time.h>
 #include "raylib.h"
 #include "player.h"
+#include "main.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -68,7 +69,7 @@ typedef struct {
     EnemyState state;
     Texture2D patrolFrames[5];   
     Texture2D chaseFrames[9];   
-    Texture2D attackFrames;    
+    Texture2D attackFrames[4];    
     Texture2D laserFrame;
     int currentFrame;
     float frameTimer;
@@ -107,7 +108,7 @@ Vector2 enemy_normalizeVector(Vector2 v);
 
 
 /// 初始化無人機
-void enemy_initDrone(Drone* drone);
+void enemy_initDrone(Drone* drone, enemyTextures *dronetexture);
 
 /// 初始化機器士兵
 void enemy_initSoldier(Soldier* soldier);
@@ -124,6 +125,7 @@ void enemy_laserDamagePlayer(Drone *drone, Player *player);
 void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* soldier);
 
 
+
 float enemy_calculateDistanceBasedDamage(ScatterBullet* bullet, Player *player, Soldier* soldier);
 /// 更新無人機行動（攻擊冷卻、雷射狀態）
 void enemy_updateDrone(Drone* drone,Player *player, float deltaTime);
@@ -132,7 +134,7 @@ void enemy_updateDrone(Drone* drone,Player *player, float deltaTime);
 void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime);
 
 
-
+void enemy_bulletDamageDrone(Player *player, Drone *drone);
 
 
 
@@ -144,4 +146,5 @@ void enemy_drawDrone(Drone* drone);
 void enemy_drawLaser(Drone* drone);
 
 void enemy_hitbox(Drone* drone);
+
 #endif 

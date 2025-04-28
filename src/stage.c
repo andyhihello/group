@@ -1,4 +1,4 @@
-#include "main.h"
+
 #include "stage.h"
 
 
@@ -43,6 +43,7 @@ void stage_door(Player *player){
     Rectangle stage1_door = { 14050, 0, 480, 900 };
     if(CheckCollisionRecs(player->hitbox, stage1_door) && IsKeyPressed(KEY_SPACE)){
         player->stage = 2;
+        player->position = (Vector2){100, 300};
     }
 }
 
@@ -53,4 +54,22 @@ void stage_drawdoortext(){
 void stage_drawhitbox(){
     Rectangle stage1_door = { 14050, 0, 480, 900 };
     DrawRectangleLinesEx(stage1_door, 2, (Color){255, 0, 0, 180});
+}
+
+void stage2_init(Texture2D *backgrounds) {
+    for (int i = 0; i < stage2backgroundCount; i++) {
+        char path[100];
+        sprintf(path, "resource/scene/2-%d.png", i + 1);
+        backgrounds[i] = LoadTexture(path);
+    }
+}
+
+void stage2_draw(Texture2D *backgrounds) {
+    for (int i = 0; i < stage2backgroundCount; i++) {
+        DrawTexture(backgrounds[i], i * stage2pictureWidth, 0, WHITE);
+    }
+}
+
+void stage2_update(Player *player, Boss *boss) {
+    boss_update(boss, player);
 }

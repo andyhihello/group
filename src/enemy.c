@@ -34,27 +34,19 @@ Vector2 enemy_normalizeVector(Vector2 v) {
 }
 
 // 初始化無人機敵人（Security Drone）
-void enemy_initDrone(Drone* drone) {
-    char path[100];
-    for (int i = 0; i < 5; i++) {       
-        sprintf(path, "resource/drone/patrol%d.png", (i < 2) ? (i + 1) : (5 - i));
-        drone->patrolFrames[i] = LoadTexture(path);
-    }
-    for (int i = 0; i < 9; i++) {
-        sprintf(path, "resource/drone/chase%d.png", (i < 5) ? (i + 1) : (9 - i));
-        drone->chaseFrames[i] = LoadTexture(path);
-    }
-    drone->attackFrames= LoadTexture("resource/drone/attack.png");
+void enemy_initDrone(Drone* drone, enemyTextures *dronetexture) {
+    for (int i = 0; i < 5; i++) drone->patrolFrames[i] = dronetexture->patrolFrames[i];
+    for (int i = 0; i < 9; i++) drone->chaseFrames[i]  = dronetexture->chaseFrames[i];
+    for (int i = 0; i < 4; i++) drone->attackFrames[i] = dronetexture->attackFrames[i];
+    drone->laserFrame = dronetexture->laserFrame;
     drone->laserFrame = LoadTexture("resource/drone/laser.png");
 
     drone->active = true;
-    drone->position = (Vector2){1000, 300};
+    drone->position = (Vector2){1000, 200};
     drone->health = 100.0f;
-    drone->attackCooldown = 2.0f;           // 每2秒攻擊一次
-    drone->timeSinceLastAttack = 0.0f;
     drone->type = SECURITY_DRONE;
     drone->laser = (LaserShot){0};
-    drone->laser.damage = 25.0f;            // 雷射傷害
+    drone->laser.damage = 1.0f;            // 雷射傷害
     drone->laser.duration = 0.5f;           // 雷射持續時間
     drone->laser.active = false;
 }
@@ -90,24 +82,24 @@ void enemy_DroneFireLaser(Drone* drone, Player *player) {
 
     float laserWidth = 563.0f;
     float laserHeight = 79.0f;
-    float fixedLaserY = drone->position.y + 400;  
+    float fixedLaserY = drone->position.y + 530;  
 
     // 判斷玩家在左還是右
     if (player->hitbox.x + player->hitbox.width / 2 > drone->laser.start.x) {
         // 向右射擊
         drone->laserhitbox = (Rectangle){
             drone->laser.start.x + drone->hitbox.width + drone->hitbox.width /2,
-            fixedLaserY,
+            fixedLaserY-20,
             laserWidth,
-            laserHeight
+            laserHeight-20
         };
     } else {
         // 向左射擊
         drone->laserhitbox = (Rectangle){
             drone->laser.start.x - laserWidth + drone->hitbox.width - drone->hitbox.width /2,
-            fixedLaserY,
+            fixedLaserY-20,
             laserWidth,
-            laserHeight
+            laserHeight-20
         };
     }
 
@@ -137,7 +129,8 @@ void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player) {
 
 // 判斷雷射是否擊中玩家
 void enemy_laserDamagePlayer(Drone *drone, Player *player) {
-    if (CheckCollisionRecs(drone->laserhitbox, player->hitbox)) {
+    if (drone->laser.active == false) return;
+    if (CheckCollisionRecs(drone->laserhitbox, player->hitbox) ) {
         player->hp -= drone->laser.damage;
     }
 }
@@ -190,11 +183,11 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
     EnemyState previousState = drone->state;  // 新增：記錄上一個狀態
 
     // 狀態切換邏輯
-    if (dist > 800) {
+    if (dist > 900) {
         drone->state = PATROL;
-    } else if (dist <= 800 && dist > 500) {
+    } else if (dist <= 900 && dist > 700) {
         drone->state = CHASE;
-    } else if (dist <= 500) {
+    } else if (dist <= 700) {
         drone->state = ATTACK;
     }
     
@@ -204,11 +197,17 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
         drone->frameTimer = 0;
     }
 
-    TraceLog(LOG_INFO, "%d",drone->state);
 
     switch (drone->state) {
         case PATROL:
             drone->position.x += sin(GetTime()) * 4.0f;
+            
+            drone->frameTimer += GetFrameTime();
+            if (drone->frameTimer >= 0.1f) {  // 控制攻擊動畫播放速度
+                drone->currentFrame++;
+                if (drone->currentFrame >= 4) drone->currentFrame = 0;  // 假設攻擊動畫有 4 張圖
+                drone->frameTimer = 0;
+            }
             break;
         case CHASE:
             if ((player->hitbox.x + player->hitbox.width / 2) > drone->position.x) {
@@ -216,12 +215,29 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
             } else {
                 drone->position.x -= 200.0f * deltaTime;
             }
+
+            drone->frameTimer += GetFrameTime();
+            if (drone->frameTimer >= 0.1f) {
+                drone->currentFrame = (drone->currentFrame + 1) % 9;
+                drone->frameTimer = 0;
+            }
+
             break;
         case ATTACK:
-            drone->timeSinceLastAttack += deltaTime;
-            if (drone->timeSinceLastAttack >= drone->attackCooldown) {
+
+            drone->frameTimer += deltaTime;
+            if (drone->frameTimer >= 0.4f) {
+                drone->currentFrame++;
+                if (drone->currentFrame >= 4) drone->currentFrame = 0;  
+                drone->frameTimer = 0;
+            }
+        
+            if (drone->currentFrame == 3 && drone->laser.active == false) {
+                drone->laser.active = true;
                 enemy_DroneFireLaser(drone, player);
-                drone->timeSinceLastAttack = 0.0f;
+            }
+            else if(drone->currentFrame != 3){
+                drone->laser.active == false;
             }
             break;
     }
@@ -259,9 +275,40 @@ void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime) {
     }
 }
 
+void enemy_bulletDamageDrone(Player *player, Drone *drone) {
+
+
+    if (!drone->active) return;  // 跳過已經死掉的 Drone
+
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (player->bullets[i].active) {
+            Rectangle bulletRect = {
+                player->bullets[i].position.x,
+                player->bullets[i].position.y,
+                SIZE_BULLET,
+                SIZE_BULLET
+            };
+
+            if (CheckCollisionRecs(bulletRect, drone->hitbox)) {
+                drone->health -= player->damage;                      // 扣血
+                player->bullets[i].active = false;       // 子彈消失
+    
+                if (drone->health <= 0) {
+                    drone->active = false;     
+                    drone->laser.active = false;         // 如果血量 <= 0 就不活躍
+                }
+                break; // 一顆子彈只能打中一個 Drone
+ 
+            }
+        }
+
+        
+    }
+}
+
 void enemy_drawDrone(Drone* drone) {
     Texture2D frame;
-
+    if(drone->active == false) return;
     switch (drone->state) {
         case PATROL:
             frame = drone->patrolFrames[drone->currentFrame];
@@ -270,26 +317,8 @@ void enemy_drawDrone(Drone* drone) {
             frame = drone->chaseFrames[drone->currentFrame];
             break;
         case ATTACK:
-            frame = drone->attackFrames;
+            frame = drone->attackFrames[drone->currentFrame];
             break;
-    }
-
-    if (drone->state == PATROL) {
-        drone->frameTimer += GetFrameTime();
-        if (drone->frameTimer >= 0.1f) {
-            drone->currentFrame = (drone->currentFrame + 1) % 5;
-            drone->frameTimer = 0;
-        }
-    } 
-    else if (drone->state == CHASE) {
-        drone->frameTimer += GetFrameTime();
-        if (drone->frameTimer >= 0.1f) {
-            drone->currentFrame = (drone->currentFrame + 1) % 9;
-            drone->frameTimer = 0;
-        }
-    } 
-    else {
-        drone->currentFrame = 0;  // ATTACK 單張圖
     }
 
     Rectangle source = { 0, 0, (float)frame.width, (float)frame.height };
@@ -319,6 +348,6 @@ void enemy_drawLaser(Drone* drone) {
 }
 
 void enemy_hitbox(Drone* drone){
-    DrawRectangleLinesEx(drone->hitbox, 2, RED);
-    DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
+    if(drone->active)DrawRectangleLinesEx(drone->hitbox, 2, RED);
+    if(drone->laser.active)DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
 }

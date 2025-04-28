@@ -11,7 +11,7 @@
 #define SIZE_BULLET 10
 #define BULLET_SPEED 20
 #define GRAVITY 30.0f   //  模擬重力
-#define JUMP_STRENGTH -800.0f  //  跳躍的初始速度
+#define JUMP_STRENGTH -900.0f  //  跳躍的初始速度
 #define GROUND_Y 520
 
 typedef struct {
@@ -31,6 +31,7 @@ typedef struct {
     int hp;
 
     Bullet bullets[MAX_BULLETS];
+    int damage;
     int ammo;                 // 剩餘的子彈數量
     int maxAmmo;              // 彈匣容量
     bool reloading;           // 是否正在換彈中
