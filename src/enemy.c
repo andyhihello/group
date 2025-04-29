@@ -185,9 +185,9 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
     // 狀態切換邏輯
     if (dist > 900) {
         drone->state = PATROL;
-    } else if (dist <= 900 && dist > 700) {
+    } else if (dist <= 900 && dist > 800) {
         drone->state = CHASE;
-    } else if (dist <= 700) {
+    } else if (dist <= 800) {
         drone->state = ATTACK;
     }
     
@@ -331,6 +331,21 @@ void enemy_drawDrone(Drone* drone) {
     }
 
     DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
+
+    float barWidth = 100.0f;    // 血條總寬
+    float barHeight = 10.0f;    // 血條高度
+    float hpRatio = drone->health / 100.0f;   // 目前血量百分比 (假設滿血是100)
+    float barX = drone->position.x + frame.width/2 - barWidth/2 - 20 ;  // 中央對齊
+    float barY = drone->position.y +100;      // 頭上20px
+
+    // 畫血條底色（灰色）
+    DrawRectangle(barX, barY, barWidth, barHeight, GRAY);
+
+    // 畫血量（綠色）
+    DrawRectangle(barX, barY, barWidth * hpRatio, barHeight, GREEN);
+
+    // 血條外框
+    DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
 }
 
 void enemy_drawLaser(Drone* drone) {

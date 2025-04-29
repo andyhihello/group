@@ -29,12 +29,12 @@ void player_init(Player *player){
     // 設定腳色初始設定
     player->position = (Vector2){300, 300};
     player->hp = 100;
-    player->damage = 20;
+    player->damage = 5;
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
-    player->ammo = 50;
-    player->maxAmmo = 50;
+    player->ammo = 15;
+    player->maxAmmo = 15;
     player->speed = 300;
     player->stage = 1;
     player->tutorial = 0;
