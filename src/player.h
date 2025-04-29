@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "raylib.h"
+#include "texture.h"
 
 #define playerWidth 140
 #define playerHeight 310
@@ -29,6 +30,7 @@ typedef struct {
     bool isJumping;           // 是否正在跳躍中
 
     int hp;
+    int coin;
 
     Bullet bullets[MAX_BULLETS];
     int damage;
@@ -38,8 +40,6 @@ typedef struct {
     float reloadtime;         // 換彈總時間（單位：秒）
     float reloadTimeLeft;     // 換彈剩餘時間
 
-    Texture2D stand;          // 角色靜止圖
-    Texture2D runFrames[9];   // 角色奔跑動畫圖
     int currentFrame;         // 當前跑步動畫播放到第幾幀
     float frameTimer;         // 控制動畫播放速度
     bool isRunning;           // 是否奔跑中
@@ -56,8 +56,7 @@ void player_reload(Player *player);          // 玩家換彈邏輯（倒數 relo
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
 void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
 void player_drawbullet(Player *player, Camera2D camera);              // 子彈移動與繪製
-void player_draw(Player *player);            // 玩家角色繪製（靜止 / 跑步動畫）
-void player_unload(Player *player);          // 釋放玩家資源（貼圖）
+void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
 void player_drawhitbox(Player *player);      //debug
 
 #endif

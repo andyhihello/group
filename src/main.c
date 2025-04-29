@@ -1,54 +1,31 @@
 #include "raylib.h"
-#include "menu.h" 
 #include "main.h"
 #include "player.h"
-#include "stage.h"
-#include "enemy.h"
 #include "boss.h"
+#include "enemy.h"
+#include "stage.h"
+#include "menu.h"
+#include "texture.h"
+
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
     SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
-    //圖檔載入
-    char path[100];
-    Texture2D stage1_background[stage1backgroundCount];
-    for (int i = 0; i < stage1backgroundCount; i++) {        
-        sprintf(path, "resource/scene/1-%d.png", i + 1);
-        stage1_background[i] = LoadTexture(path);
-    }
-    Texture2D stage2_background[stage2backgroundCount];
-    for (int i = 0; i < stage2backgroundCount; i++) {
-        char path[100];
-        sprintf(path, "resource/scene/2-%d.png", i + 1);
-        stage2_background[i] = LoadTexture(path);
-    }
-    Texture2D menu_background = LoadTexture("resource/scene/background.png");//下載背景圖片
-
-    enemyTextures dronetexture;
-    for (int i = 0; i < 5; i++) {
-        sprintf(path, "resource/drone/patrol%d.png", (i < 2) ? (i + 1) : (5 - i));
-        dronetexture.patrolFrames[i] = LoadTexture(path);
-    }
-    for (int i = 0; i < 9; i++) {
-        sprintf(path, "resource/drone/chase%d.png", (i < 5) ? (i + 1) : (9 - i));
-        dronetexture.chaseFrames[i] = LoadTexture(path);
-    }
-    for (int i = 0; i < 4; i++) {
-        sprintf(path, "resource/drone/attack%d.png", i + 1);
-        dronetexture.attackFrames[i] = LoadTexture(path);
-    }
-    dronetexture.laserFrame = LoadTexture("resource/drone/laser.png");
+    GameTextures textures;
+    loadGameTextures(&textures);
+    
 
     // 初始化
-    initMenu(menu_background);
+    initMenu(textures.menuBackground);
     GameState currentGameState = MENU;
     Player player;
+    player_init(&player);
     Drone drone[MAX_DRONES];
     Soldier soldier;
-    player_init(&player);
+
     for (int i = 0; i < MAX_DRONES; i++) {
-        enemy_initDrone(&drone[i],&dronetexture);
+        enemy_initDrone(&drone[i]);
         drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
     }
     enemy_initSoldier(&soldier);
@@ -63,29 +40,8 @@ int main() {
 
     int debug = 0;
 
-    //檢查圖片載入
-    bool loadError = false;
-    for (int i = 0; i < stage1backgroundCount; i++) {
-        if (stage1_background[i].id == 0) {
-            loadError = true;
-        }
-    }
-    if (menu_background.id == 0) {
-        loadError = true;
-    }
-    if (player.stand.id == 0) {
-        loadError = true;
-    }
-    for (int i = 0; i < 9; i++) {
-        if (player.runFrames[i].id == 0) {
-            loadError = true;
-        }
-    }
-    if (loadError) {
-        TraceLog(LOG_ERROR, "Resource loading failed");
-        CloseWindow();
-        return -1;
-    }
+    
+
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -93,7 +49,7 @@ int main() {
 
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
-            updateMenu(&currentGameState); 
+            updateMenu(&currentGameState, &player, &boss, drone);
         } 
 
         else if (currentGameState == GAME) {
@@ -158,14 +114,14 @@ int main() {
             BeginMode2D(camera);
             if (player.stage == 1){
                 for (int i = 0; i < stage1backgroundCount; i++) {
-                    DrawTexture(stage1_background[i], i * stage1pictureWidth, 0, WHITE);
+                    DrawTexture(textures.stage1Background[i], i * stage1pictureWidth, 0, WHITE);
                 }
 
                 stage_drawdoortext(); 
-                player_draw(&player);
+                player_draw(&player, &textures);
                 for (int i = 0; i < MAX_DRONES; i++) {
-                    enemy_drawDrone(&drone[i]);
-                    enemy_drawLaser(&drone[i]);
+                    enemy_drawDrone(&drone[i], &textures);
+                    enemy_drawLaser(&drone[i], &textures);      
                 }
                 
                 player_drawbullet(&player,camera);
@@ -180,9 +136,9 @@ int main() {
                       
             }
             else if (player.stage == 2) {
-                stage2_draw(stage2_background);
+                stage2_draw(textures.stage2Background);
                 boss_draw(&boss);
-                player_draw(&player);
+                player_draw(&player, &textures);
                 player_drawbullet(&player, camera);
                 
                 if(debug) {
@@ -207,17 +163,7 @@ int main() {
     }
 
     // 釋放資源並關閉  
-    UnloadTexture(menu_background);
-    for (int i = 0; i < stage1backgroundCount; i++) {
-        UnloadTexture(stage1_background[i]);
-    }
-
-    for (int i = 0; i < stage2backgroundCount; i++) {
-        UnloadTexture(stage2_background[i]);
-    }
-
-    player_unload(&player);
-    boss_unload(&boss);
+    unloadGameTextures(&textures);
 
     CloseWindow();
     return 0;

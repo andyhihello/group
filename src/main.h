@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include "raylib.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -15,6 +16,7 @@ typedef struct {
     Texture2D laserFrame;
 } enemyTextures;
 
+typedef enum { MENU, GAME, SETTINGS } GameState;
 
 #define screenWidth 1600
 #define screenHeight 900
@@ -27,6 +29,6 @@ typedef struct {
 
 #define MAX_DRONES 5
 
-typedef enum { MENU, GAME, SETTINGS } GameState;
+
 
 #endif

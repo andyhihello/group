@@ -34,13 +34,7 @@ Vector2 enemy_normalizeVector(Vector2 v) {
 }
 
 // 初始化無人機敵人（Security Drone）
-void enemy_initDrone(Drone* drone, enemyTextures *dronetexture) {
-    for (int i = 0; i < 5; i++) drone->patrolFrames[i] = dronetexture->patrolFrames[i];
-    for (int i = 0; i < 9; i++) drone->chaseFrames[i]  = dronetexture->chaseFrames[i];
-    for (int i = 0; i < 4; i++) drone->attackFrames[i] = dronetexture->attackFrames[i];
-    drone->laserFrame = dronetexture->laserFrame;
-    drone->laserFrame = LoadTexture("resource/drone/laser.png");
-
+void enemy_initDrone(Drone* drone) {
     drone->active = true;
     drone->position = (Vector2){1000, 200};
     drone->health = 100.0f;
@@ -49,6 +43,7 @@ void enemy_initDrone(Drone* drone, enemyTextures *dronetexture) {
     drone->laser.damage = 1.0f;            // 雷射傷害
     drone->laser.duration = 0.5f;           // 雷射持續時間
     drone->laser.active = false;
+    drone->coin = 1;
 }
 
 // 初始化機器人士兵（Robot Soldier）
@@ -294,7 +289,8 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone) {
                 player->bullets[i].active = false;       // 子彈消失
     
                 if (drone->health <= 0) {
-                    drone->active = false;     
+                    drone->active = false;
+                    player->coin += drone->coin;
                     drone->laser.active = false;         // 如果血量 <= 0 就不活躍
                 }
                 break; // 一顆子彈只能打中一個 Drone
@@ -306,18 +302,18 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone) {
     }
 }
 
-void enemy_drawDrone(Drone* drone) {
+void enemy_drawDrone(Drone* drone, GameTextures *textures) {
     Texture2D frame;
     if(drone->active == false) return;
     switch (drone->state) {
         case PATROL:
-            frame = drone->patrolFrames[drone->currentFrame];
+            frame = textures->dronePatrol[drone->currentFrame];
             break;
         case CHASE:
-            frame = drone->chaseFrames[drone->currentFrame];
+            frame = textures->droneChase[drone->currentFrame];
             break;
         case ATTACK:
-            frame = drone->attackFrames[drone->currentFrame];
+            frame = textures->droneAttack[drone->currentFrame];
             break;
     }
 
@@ -348,9 +344,9 @@ void enemy_drawDrone(Drone* drone) {
     DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
 }
 
-void enemy_drawLaser(Drone* drone) {
+void enemy_drawLaser(Drone* drone, GameTextures *textures) {
     if (drone->laser.active) {
-        Rectangle source = { 0, 0, (float)drone->laserFrame.width, (float)drone->laserFrame.height };
+        Rectangle source = { 0, 0, (float)textures->droneLaser.width, (float)textures->droneLaser.height };
         Rectangle dest = drone->laserhitbox;
         Vector2 origin = { 0, 0 };
 
@@ -358,7 +354,7 @@ void enemy_drawLaser(Drone* drone) {
             source.width = -source.width;  // 左翻轉
         }
 
-        DrawTexturePro(drone->laserFrame, source, dest, origin, 0.0f, WHITE);
+        DrawTexturePro(textures->droneLaser, source, dest, origin, 0.0f, WHITE);
     }
 }
 
@@ -366,3 +362,4 @@ void enemy_hitbox(Drone* drone){
     if(drone->active)DrawRectangleLinesEx(drone->hitbox, 2, RED);
     if(drone->laser.active)DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
 }
+

@@ -5,6 +5,7 @@
 #include <time.h>
 #include "raylib.h"
 #include "player.h"
+#include "texture.h"
 #include "main.h"
 
 #ifndef M_PI
@@ -67,13 +68,9 @@ typedef struct {
     bool facingRight;
 
     EnemyState state;
-    Texture2D patrolFrames[5];   
-    Texture2D chaseFrames[9];   
-    Texture2D attackFrames[4];    
-    Texture2D laserFrame;
     int currentFrame;
     float frameTimer;
-    
+    int coin;
 
 } Drone;
 
@@ -108,7 +105,7 @@ Vector2 enemy_normalizeVector(Vector2 v);
 
 
 /// 初始化無人機
-void enemy_initDrone(Drone* drone, enemyTextures *dronetexture);
+void enemy_initDrone(Drone* drone);
 
 /// 初始化機器士兵
 void enemy_initSoldier(Soldier* soldier);
@@ -141,10 +138,11 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone);
 /// 根據距離計算子彈對玩家的傷害（越近傷害越高）
 
 
-void enemy_drawDrone(Drone* drone);
+void enemy_drawDrone(Drone* drone, GameTextures *textures);
 
-void enemy_drawLaser(Drone* drone);
+void enemy_drawLaser(Drone* drone, GameTextures *textures);
 
 void enemy_hitbox(Drone* drone);
+
 
 #endif 

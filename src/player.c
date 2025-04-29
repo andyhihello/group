@@ -12,23 +12,10 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    // 載入圖片
-    player->stand = LoadTexture("resource/player/stand.png");
-    if (player->stand.id == 0) {
-        TraceLog(LOG_ERROR, "stand.png 載入失敗！");
-    }
-    //奔跑動畫載入
-    for (int i = 0; i < 9; i++) {
-        char path[100];
-        sprintf(path, "resource/player/run%d.png", (i < 5) ? (i + 1) : (9 - i));
-        player->runFrames[i] = LoadTexture(path);
-        if (player->runFrames[i].id == 0) {
-            TraceLog(LOG_ERROR, "%s 載入失敗！", path);
-        }
-    }
     // 設定腳色初始設定
-    player->position = (Vector2){300, 300};
+    player->position = (Vector2){14300, 300};
     player->hp = 100;
+    player->coin = 0;
     player->damage = 5;
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
@@ -130,6 +117,10 @@ void player_UI(Player *player){
     snprintf(hpText, sizeof(hpText), "HP: %d", player->hp);
     DrawText(hpText, 10, 60, 20, WHITE);  // 位置在左上角，紅色字體
 
+    char coinText[20];
+    snprintf(coinText, sizeof(coinText), "COIN: %d", player->coin);
+    DrawText(coinText, 10, 90, 20, WHITE);
+
     // 顯示換彈倒數
     if (player->reloadTimeLeft > 0) {
         char reloadText[30];
@@ -211,32 +202,27 @@ void player_drawbullet(Player *player, Camera2D camera) {
     }
 }
 
-void player_draw(Player *player){
-    Texture2D frame = player->isRunning ? player->runFrames[player->currentFrame] : player->stand;
-    if (player->facingRight) {
-        DrawTextureV(frame, player->position, WHITE);
-    } 
-    else {
-        DrawTexturePro(
-            frame,
-            (Rectangle){ 0, 0, (float)-frame.width, (float)frame.height },  // 負寬度實現鏡像
-            (Rectangle){ player->position.x, player->position.y, (float)frame.width, (float)frame.height },
-            (Vector2){ 0, 0 }, 0.0f, WHITE
-        );
+
+void player_draw(Player *player, GameTextures *textures) {
+    Texture2D frame;
+
+    if (player->isRunning) {
+        frame = textures->playerRun[player->currentFrame];
+    } else {
+        frame = textures->playerStand;
     }
 
-    
+    Rectangle source = { 0, 0, (float)frame.width, (float)frame.height };
+    Rectangle dest = { player->position.x, player->position.y, (float)frame.width, (float)frame.height };
+    Vector2 origin = { 0, 0 };
+
+    if (!player->facingRight) {
+        source.width = -source.width;
+    }
+
+    DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
 }
 
-void player_unload(Player *player) {
-    UnloadTexture(player->stand);
-    for (int i = 0; i < 9; i++) {
-        UnloadTexture(player->runFrames[i]);
-    }
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        player->bullets[i].active = false;
-    }
-}
 
 void player_drawhitbox(Player *player){
     DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
