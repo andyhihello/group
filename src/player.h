@@ -31,6 +31,11 @@ typedef struct {
 
     int hp;
     int coin;
+    bool invincible;            // 是否無敵中
+    float invincibleTimeLeft;   // 無敵剩餘時間
+    float invincibleDuration;   // 每次無敵持續時間
+    float invincibleCooldown;   // 冷卻時間
+    float invincibleCooldownLeft; // 冷卻剩餘時間
 
     Bullet bullets[MAX_BULLETS];
     int damage;
@@ -47,6 +52,18 @@ typedef struct {
 
     int tutorial;
     int stage;
+
+    int upgrade_reload_cost;      // 換彈速度升級花多少coin
+    int upgrade_ammo_cost;         // 子彈容量升級花多少coin
+    int upgrade_invincible_cost;   // 無敵CD升級花多少coin
+
+    float reload_upgrade_ratio;    // 換彈速度每次升級的倍率（例如0.9 = 變快10%）
+    int ammo_upgrade_amount;        // 子彈容量每次增加多少
+    float invincible_upgrade_ratio; // 無敵CD每次縮短倍率
+
+    int reload_upgrade_times;     // 換彈已升級幾次
+    int ammo_upgrade_times;       // 容量已升級幾次
+    int invincible_upgrade_times; // 無敵CD已升級幾次
 } Player;
 
 void player_hitbox(Player *player);
@@ -55,6 +72,7 @@ void player_move(Player *player,float deltaTime);            // 玩家移動與�
 void player_reload(Player *player);          // 玩家換彈邏輯（倒數 reload 時間）
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
 void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
+void player_skillupgrade(Player *player);
 void player_drawbullet(Player *player, Camera2D camera);              // 子彈移動與繪製
 void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
 void player_drawhitbox(Player *player);      //debug

@@ -67,6 +67,7 @@ int main() {
                 if (camX > stage1Width - screenWidth * 0.6f) camX = stage1Width - screenWidth * 0.6f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
+                player_skillupgrade(&player);
                 stage_door(&player);
 
                 for (int i = 0; i < MAX_DRONES; i++) {

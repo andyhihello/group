@@ -124,7 +124,7 @@ void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player) {
 
 // 判斷雷射是否擊中玩家
 void enemy_laserDamagePlayer(Drone *drone, Player *player) {
-    if (drone->laser.active == false) return;
+    if (drone->laser.active == false||player->invincible == true) return;
     if (CheckCollisionRecs(drone->laserhitbox, player->hitbox) ) {
         player->hp -= drone->laser.damage;
     }

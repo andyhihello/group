@@ -10,7 +10,8 @@ void loadGameTextures(GameTextures *textures) {
         sprintf(path, "resource/player/run%d.png", (i < 5) ? (i + 1) : (9 - i));
         textures->playerRun[i] = LoadTexture(path);
     }
-
+    textures->shieldTexture = LoadTexture("resource/player/shield.png");
+    
     // Boss
     const char *bossAttackFiles[] = {
         "attack_0001.png", "attack_0003.png", "attack_0005.png",
