@@ -14,7 +14,7 @@ void loadGameTextures(GameTextures *textures) {
     
     // Boss
     for (int i = 0; i < 6; i++) {
-        sprintf(path, "resource/boss/attack/attack%d", i+1);
+        sprintf(path, "resource/boss/attack/attack%d.png", i+1);
         textures->bossAttack[i] = LoadTexture(path);
     }
 
