@@ -12,7 +12,7 @@
 #define BOSS_ATTACK_RANGE 300.0f
 #define BOSS_ATTACK_COOLDOWN 2.0f
 #define BOSS_HEALTH 100
-
+int a;
 typedef struct {
     Vector2 position;
     Rectangle hitbox;
