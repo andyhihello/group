@@ -138,7 +138,7 @@ int main() {
             }
             else if (player.stage == 2) {
                 stage2_draw(textures.stage2Background);
-                boss_draw(&boss);
+                boss_draw(&boss, &textures);
                 player_draw(&player, &textures);
                 player_drawbullet(&player, camera);
                 

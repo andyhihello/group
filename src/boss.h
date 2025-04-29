@@ -16,7 +16,6 @@
 typedef struct {
     Vector2 position;
     Rectangle hitbox;
-    Texture2D attackFrames[BOSS_ATTACK_FRAME_COUNT];
     int currentFrame;
     float frameCounter;
     float frameSpeed;
@@ -28,7 +27,6 @@ typedef struct {
 
 void boss_init(Boss *boss);
 void boss_update(Boss *boss, Player *player);
-void boss_draw(Boss *boss);
-void boss_unload(Boss *boss);
+void boss_draw(Boss *boss, GameTextures *textures);
 
 #endif 
