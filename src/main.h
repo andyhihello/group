@@ -20,12 +20,16 @@ typedef enum { MENU, GAME, SETTINGS } GameState;
 
 #define screenWidth 1600
 #define screenHeight 900
+
+// 第一阶段
 #define stage1backgroundCount 5
 #define stage1pictureWidth 3000
 #define stage1Width (stage1backgroundCount * stage1pictureWidth)
+
+// 第二阶段
 #define stage2backgroundCount 2
 #define stage2pictureWidth 3000
-#define stage2Width 3000
+#define stage2Width (stage2backgroundCount * stage2pictureWidth)  // 改为动态计算
 
 #define MAX_DRONES 5
 

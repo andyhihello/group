@@ -15,7 +15,7 @@ void player_hitbox(Player *player) {
 
 void player_init(Player *player){
     // 設定腳色初始設定
-    player->position = (Vector2){300, 300};
+    player->position = (Vector2){14300, 300};
     player->hp = 100;
     player->coin = 100;
     player->damage = 5;
@@ -329,9 +329,14 @@ void player_skillupgrade(Player *player) {
 }
 
 void player_drawbullet(Player *player, Camera2D camera) {
-    // 計算鏡頭的視野範圍（世界座標）
+    // 计算镜头的视野范围（世界坐标）
     int sceneWidth;
-    if(player->stage == 1) sceneWidth = stage1Width;
+    if(player->stage == 1) {
+        sceneWidth = stage1Width;
+    } else if(player->stage == 2) {
+        sceneWidth = stage2Width;  // 或者设置为 stage2 的宽度
+    }
+    
     Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
     Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 
@@ -341,7 +346,7 @@ void player_drawbullet(Player *player, Camera2D camera) {
             player->bullets[i].position.x += player->bullets[i].speed.x;
             player->bullets[i].position.y += player->bullets[i].speed.y;
 
-            // 超出地圖範圍，停用子彈
+            // 超出地图范围，停用子弹
             if (player->bullets[i].position.x < 0 || player->bullets[i].position.x > sceneWidth ||
                 player->bullets[i].position.y < 0 || player->bullets[i].position.y > screenHeight || 
                 (player->stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
@@ -356,7 +361,7 @@ void player_drawbullet(Player *player, Camera2D camera) {
                 player->bullets[i].active = false;
                 continue;
             }
-            // 在畫面內才繪製
+            // 在画面内才绘制
             if (player->bullets[i].position.x >= screenTopLeft.x && player->bullets[i].position.x <= screenBottomRight.x &&
                 player->bullets[i].position.y >= screenTopLeft.y && player->bullets[i].position.y <= screenBottomRight.y) {
                 DrawCircleV(player->bullets[i].position, SIZE_BULLET, RED);
@@ -415,4 +420,43 @@ void player_draw(Player *player, GameTextures *textures) {
 
 void player_drawhitbox(Player *player){
     DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
+}
+
+void player_update(Player *player) {
+    // 更新子彈位置
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (player->bullets[i].active) {
+            // 只更新 y 坐標，保持 x 坐標不變
+            player->bullets[i].position.y -= BULLET_SPEED * GetFrameTime();
+            
+            // 如果子彈超出屏幕頂部，停用子彈
+            if (player->bullets[i].position.y < 0) {
+                player->bullets[i].active = false;
+            }
+        }
+    }
+}
+
+void player_shoot(Player *player) {
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (!player->bullets[i].active) {
+            // 設置子彈的初始位置為玩家位置
+            player->bullets[i].position = (Vector2){
+                player->position.x,  // 直接使用玩家 x 坐標
+                player->position.y   // 直接使用玩家 y 坐標
+            };
+            player->bullets[i].active = true;
+            break;
+        }
+    }
+}
+
+void player_updateBullets(Player *player) {
+    // 删除这个函数中的边界检查，因为已经在 player_drawbullet 中处理了
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (player->bullets[i].active) {
+            player->bullets[i].position.x += player->bullets[i].speed.x;
+            player->bullets[i].position.y += player->bullets[i].speed.y;
+        }
+    }
 }
