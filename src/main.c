@@ -26,7 +26,7 @@ int main() {
 
     for (int i = 0; i < MAX_DRONES; i++) {
         enemy_initDrone(&drone[i]);
-        drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
+        drone[i].position = (Vector2){2000 + i * 1500, 200};  // 每台 Drone 分開一點
     }
     enemy_initSoldier(&soldier);
     Camera2D camera = { 0 };
@@ -54,8 +54,8 @@ int main() {
 
         else if (currentGameState == GAME) {
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
-            if (player.stage == 1){
-                player_move(&player, deltaTime);  
+            if (player.stage == 1 && !player.dead){
+                player_update(&player, deltaTime);  
                 for (int i = 0; i < MAX_DRONES; i++) {
                     enemy_updateDrone(&drone[i], &player, deltaTime); 
                 }  
@@ -73,12 +73,14 @@ int main() {
                 for (int i = 0; i < MAX_DRONES; i++) {
                     enemy_laserDamagePlayer(&drone[i], &player);
                     enemy_bulletDamageDrone(&player, &drone[i]); 
-                } 
-                
+                }                 
             }
+            else if(player.dead){
+                player_dead(&player);
+            }   
 
-            else if (player.stage == 2) {
-                player_move(&player,deltaTime);
+            else if (player.stage == 2 && !player.dead) {
+                player_update(&player,deltaTime);
                 camX = player.position.x;
                 // 使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
@@ -92,7 +94,7 @@ int main() {
             if(player.tutorial){
                 if (IsKeyPressed(KEY_SPACE)) {
                     player.tutorial++;
-                    if(player.tutorial == 3)player.tutorial = false; 
+                    if(player.tutorial == 4)player.tutorial = false; 
                 }
             }
 
@@ -174,7 +176,9 @@ int main() {
             }
             EndMode2D();
 
-            player_UI(&player);           
+            if(!player.dead)player_UI(&player);    
+            else player_deadUI(&player);    
+
             if(player.tutorial){
                 stage_drawtutorial(&player);
             }

@@ -2,40 +2,48 @@
 #include "main.h"
 
 void stage_drawtutorial(Player *player) {
-    // 背景半透明遮罩
+    // 背景遮罩
     int boxWidth = 1200;
-    int boxHeight = 300;
+    int boxHeight = 350;
     int boxX = 200;
-    int boxY = 150;
+    int boxY = 120;
 
-    DrawRectangle(boxX, boxY, boxWidth, boxHeight, Fade(BLACK, 0.8f));
-
-    // 標題置中
-    DrawText("STAGE 1: INFILTRATION", boxX + boxWidth / 2 - MeasureText("STAGE 1: INFILTRATION", 30) / 2, boxY + 20, 30, YELLOW);
+    DrawRectangle(boxX, boxY, boxWidth, boxHeight, Fade(BLACK, 0.95f));
+    DrawText("GAME TUTORIAL", boxX + boxWidth / 2 - MeasureText("GAME TUTORIAL", 40) / 2, boxY + 20, 40, WHITE);
 
     int textStartX = boxX + 40;
     int textStartY = boxY + 80;
 
-    if (player->tutorial == 1) {
-        DrawText("Basic Controls:", textStartX, textStartY, 25, WHITE);
-        DrawText("A / D - Move Left / Right", textStartX + 20, textStartY + 40, 20, WHITE);
-        DrawText("W - Jump", textStartX + 20, textStartY + 70, 20, WHITE);
-        DrawText("Left Mouse Button - Shoot", textStartX + 20, textStartY + 100, 20, WHITE);
-        DrawText("R - Reload", textStartX + 20, textStartY + 130, 20, WHITE);
+    switch (player->tutorial) {
+    case 1:
+        DrawText("Basic Controls:", textStartX, textStartY, 28, YELLOW);
+        DrawText("A / D       - Move Left / Right", textStartX + 20, textStartY + 40, 22, WHITE);
+        DrawText("W           - Jump", textStartX + 20, textStartY + 70, 22, WHITE);
+        DrawText("Mouse Left  - Shoot", textStartX + 20, textStartY + 100, 22, WHITE);
+        DrawText("R           - Reload Ammo", textStartX + 20, textStartY + 130, 22, WHITE);
+        DrawText("E           - Activate Shield (invincibility)", textStartX + 20, textStartY + 160, 22, WHITE);
+        break;
+
+    case 2:
+        DrawText("Skill Upgrade System:", textStartX, textStartY, 28, YELLOW);
+        DrawText("Collect COINS to upgrade your abilities! PRESS [num] to upgrade", textStartX + 20, textStartY + 40, 22, YELLOW);
+        DrawText("[1] Reload Speed    - Faster reloading", textStartX + 20, textStartY + 70, 22,  WHITE);
+        DrawText("[2] Ammo Capacity   - Carry more bullets", textStartX + 20, textStartY + 100, 22,  WHITE);
+        DrawText("[3] Shield Cooldown - Shorter invincibility cooldown", textStartX + 20, textStartY + 130, 22,  WHITE);
+        DrawText("Each upgrade costs coins and can be leveled up twice.", textStartX + 20, textStartY + 170, 22, RED);
+        break;
+
+    case 3:
+        DrawText("Mission Objective:", textStartX, textStartY, 28, YELLOW);
+        DrawText("Infiltrate NEX Corp's cyber base and stop the Neural Override Project.", textStartX + 20, textStartY + 40, 22, WHITE);
+        DrawText("Defeat all enemies including the boss to save humanity.", textStartX + 20, textStartY + 70, 22, WHITE);
+        DrawText("If you die, you need to pay 2 coins to revive, or it's game over.", textStartX + 20, textStartY + 150, 32,  RED);
+        break;
     }
 
-    if (player->tutorial == 2) {
-        DrawText("Mission Objective:", textStartX, textStartY, 25, WHITE);
-        DrawText("Infiltrate NEX Corp headquarters, defeat the enemies, and move forward.", textStartX + 20, textStartY + 40, 20, WHITE);
-
-        DrawText("Warning:", textStartX, textStartY + 100, 25, WHITE);
-        DrawText("Limited ammo. Watch your bullets! And use \"R\" to reload.", textStartX + 20, textStartY + 140, 20, WHITE);
-        DrawText("Avoid enemy attacks. Proceed with caution!", textStartX + 20, textStartY + 170, 20, WHITE);
-    }
-
-    // 提示文字置中在畫面最下方
+    // 指示文字
     const char *continueText = "Press [SPACE] to continue...";
-    DrawText(continueText, boxX + boxWidth - MeasureText(continueText, 25) -20 , boxY + boxHeight - 30, 25, GREEN);
+    DrawText(continueText, boxX + boxWidth - MeasureText(continueText, 25) - 20, boxY + boxHeight - 30, 25, GREEN);
 }
 
 void stage_door(Player *player){

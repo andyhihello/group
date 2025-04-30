@@ -43,7 +43,7 @@ void enemy_initDrone(Drone* drone) {
     drone->laser.damage = 1.0f;            // 雷射傷害
     drone->laser.duration = 0.5f;           // 雷射持續時間
     drone->laser.active = false;
-    drone->coin = 1;
+    drone->coin = 2;
 }
 
 // 初始化機器人士兵（Robot Soldier）

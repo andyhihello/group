@@ -1,8 +1,11 @@
 #include "player.h"
 #include "main.h"
+
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
 float upgradeEffectTimer = 0.0f; // 特效剩餘時間
 const float upgradeEffectDuration = 1.0f; // 特效持續秒數
+float upgradeFailTimer;         // 顯示失敗訊息用的計時器
+const float upgradeFailDuration = 1.0f; // 顯示 1 秒
 
 void player_hitbox(Player *player) {
     player->hitbox = (Rectangle){
@@ -15,9 +18,9 @@ void player_hitbox(Player *player) {
 
 void player_init(Player *player){
     // 設定腳色初始設定
-    player->position = (Vector2){14300, 300};
+    player->position = (Vector2){300, 300};
     player->hp = 100;
-    player->coin = 100;
+    player->coin = 0;
     player->damage = 5;
     player->invincible = false;
     player->invincibleDuration = 3.0f;
@@ -31,7 +34,8 @@ void player_init(Player *player){
     player->maxAmmo = 15;
     player->speed = 300;
     player->stage = 1;
-    player->tutorial = 0;
+    player->tutorial = 1;
+    player->dead = false;
 
 
     // 設定升級用參數
@@ -48,7 +52,7 @@ void player_init(Player *player){
     player->invincible_upgrade_times = 0;
 }
 
-void player_move(Player *player,float deltaTime){
+void player_update(Player *player,float deltaTime){
 
     if (IsKeyPressed(KEY_E) && player->invincibleCooldownLeft <= 0.0f) {
         player->invincible = true;
@@ -66,6 +70,11 @@ void player_move(Player *player,float deltaTime){
     if (player->invincibleCooldownLeft > 0.0f) {
         player->invincibleCooldownLeft -= deltaTime;
     }
+
+    if (!player->dead && player->hp <= 0) {
+        player->dead = true;
+    }
+
     // 左移
     if (IsKeyDown(KEY_A)) {
         player->position.x -= player->speed * deltaTime;
@@ -206,6 +215,14 @@ void player_UI(Player *player) {
         upgradeEffectTimer -= GetFrameTime();
     }
 
+    if (player->upgradeFailTimer > 0.0f) {
+        float alpha = player->upgradeFailTimer / upgradeFailDuration;
+        Color alertColor = (Color){255, 0, 0, (unsigned char)(alpha * 255)};
+        DrawText("Not enough coins!", screenWidth / 2 - MeasureText("Not enough coins!", 30) / 2, screenHeight / 2 - 150, 30, alertColor);
+    
+        player->upgradeFailTimer -= GetFrameTime();
+    }
+
     if (player->invincibleCooldownLeft > 0.0f) {
         char cooldownText[40];
         snprintf(cooldownText, sizeof(cooldownText), "E: Shield Cooldown %.1f", player->invincibleCooldownLeft);
@@ -253,7 +270,7 @@ void player_attack(Player *player,Camera2D camera){
 }
 
 void player_skillupgrade(Player *player) {
-    const int upgradeCost = 10; // 每次升級花10個coin（可以自己改）
+
     int upgradeType;
 
     if (IsKeyPressed(KEY_ONE)) {  // 按 1 升級換彈速度
@@ -266,11 +283,6 @@ void player_skillupgrade(Player *player) {
         upgradeType = 3;
     }
     else upgradeType = 0;
-
-    if (player->coin < upgradeCost) {
-        TraceLog(LOG_INFO, "金幣不足，無法升級！");
-        return;
-    }
 
     switch (upgradeType) {
         case 1: // 換彈速度增加
@@ -286,6 +298,7 @@ void player_skillupgrade(Player *player) {
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
                 TraceLog(LOG_INFO, "reloadupgrade!");
             } else {
+                player->upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -303,6 +316,7 @@ void player_skillupgrade(Player *player) {
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
                 TraceLog(LOG_INFO, "ammoupgrade!");
             } else {
+                player->upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -319,6 +333,7 @@ void player_skillupgrade(Player *player) {
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
                 TraceLog(LOG_INFO, "invincibleupgrade!");
             } else {
+                player->upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -422,41 +437,39 @@ void player_drawhitbox(Player *player){
     DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
 }
 
-void player_update(Player *player) {
-    // 更新子彈位置
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        if (player->bullets[i].active) {
-            // 只更新 y 坐標，保持 x 坐標不變
-            player->bullets[i].position.y -= BULLET_SPEED * GetFrameTime();
-            
-            // 如果子彈超出屏幕頂部，停用子彈
-            if (player->bullets[i].position.y < 0) {
-                player->bullets[i].active = false;
-            }
+void player_dead(Player *player){
+    
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        
+        if(player->coin > 1){
+            player->coin -= 2;
+            player->hp = 100;
+            player->position = (Vector2){300, 300}; // 重生點
+            player->dead = false;
         }
+        
     }
+
 }
 
-void player_shoot(Player *player) {
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        if (!player->bullets[i].active) {
-            // 設置子彈的初始位置為玩家位置
-            player->bullets[i].position = (Vector2){
-                player->position.x,  // 直接使用玩家 x 坐標
-                player->position.y   // 直接使用玩家 y 坐標
-            };
-            player->bullets[i].active = true;
-            break;
-        }
-    }
-}
+void player_deadUI(Player *player){
+    ClearBackground(BLACK);
+    const char *title = "YOU DIED";
+    int titleFontSize = 80;
+    int titleWidth = MeasureText(title, titleFontSize);
+    DrawText(title, (screenWidth - titleWidth) / 2, screenHeight / 2 - 120, titleFontSize, RED);
 
-void player_updateBullets(Player *player) {
-    // 删除这个函数中的边界检查，因为已经在 player_drawbullet 中处理了
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        if (player->bullets[i].active) {
-            player->bullets[i].position.x += player->bullets[i].speed.x;
-            player->bullets[i].position.y += player->bullets[i].speed.y;
-        }
+    // 有錢：黃色提示
+    if (player->coin >= 2) {
+        const char *reviveText = "Press [SPACE] to revive (DEDUCT 2 COIN)";
+        int textWidth = MeasureText(reviveText, 30);
+        DrawText(reviveText, (screenWidth - textWidth) / 2, screenHeight / 2, 30, YELLOW);
+    } 
+    // 沒錢：灰色 GAME OVER 提示
+    else {
+        const char *noMoneyText = "Not enough coins. Press [ESC] and GAMEOVER";
+        int textWidth = MeasureText(noMoneyText, 30);
+        DrawText(noMoneyText, (screenWidth - textWidth) / 2, screenHeight / 2, 30, GRAY);
     }
 }

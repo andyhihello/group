@@ -17,6 +17,8 @@
 #define BULLET_WIDTH 10
 #define BULLET_HEIGHT 10
 
+
+
 typedef struct {
     Vector2 position;
     Vector2 startPosition;
@@ -33,6 +35,7 @@ typedef struct {
 
     int hp;
     int coin;
+    bool dead;
     bool invincible;            // 是否無敵中
     float invincibleTimeLeft;   // 無敵剩餘時間
     float invincibleDuration;   // 每次無敵持續時間
@@ -66,11 +69,13 @@ typedef struct {
     int reload_upgrade_times;     // 換彈已升級幾次
     int ammo_upgrade_times;       // 容量已升級幾次
     int invincible_upgrade_times; // 無敵CD已升級幾次
+
+    float upgradeFailTimer;         // 顯示失敗訊息用的計時器
 } Player;
 
 void player_hitbox(Player *player);
 void player_init(Player *player);            // 玩家初始化（載入圖片、設定初始狀態）
-void player_move(Player *player,float deltaTime);            // 玩家移動與跳躍控制（含動畫）
+void player_update(Player *player,float deltaTime);            // 玩家移動與跳躍控制（含動畫）
 void player_reload(Player *player);          // 玩家換彈邏輯（倒數 reload 時間）
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
 void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
@@ -78,5 +83,6 @@ void player_skillupgrade(Player *player);
 void player_drawbullet(Player *player, Camera2D camera);              // 子彈移動與繪製
 void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
 void player_drawhitbox(Player *player);      //debug
-
+void player_dead(Player *player);
+void player_deadUI(Player *player);
 #endif
