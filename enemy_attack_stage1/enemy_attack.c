@@ -104,7 +104,7 @@ void securityDroneFireLaser(SecurityDrone* drone, Vector2 playerPosition) {
     direction = normalizeVector(direction);
     
     // Set laser end point (long enough distance)
-    float laserLength = 1000.0f;  // Laser length
+    float laserLength = 15000.0f;  // Laser length
     drone->laser.end.x = drone->position.x + direction.x * laserLength;
     drone->laser.end.y = drone->position.y + direction.y * laserLength;
     
