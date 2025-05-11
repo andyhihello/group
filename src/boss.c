@@ -50,7 +50,7 @@ void boss_update(Boss *boss, Player *player) {
         }
     }
     
-    // 檢查與玩家的距離，決定是否攻擊
+    // 計算與玩家的距離
     float dx = player->position.x - boss->position.x;
     boss->facingLeft = dx < 0;  // 如果玩家在左邊，boss朝左
     
@@ -59,9 +59,20 @@ void boss_update(Boss *boss, Player *player) {
     if (boss->facingLeft) {
         attackTriggerDistance = 400.0f;
     } else {
-        attackTriggerDistance = 200.0f;  // 朝右時減少約1/3距離 (400 * 2/3 ≈ 270)
+        attackTriggerDistance = 200.0f;
     }
     
+    // 如果不在攻擊範圍內，移動boss
+    if (fabs(dx) > attackTriggerDistance && !boss->isAttacking) {
+        float moveSpeed = 100.0f * GetFrameTime();  // 移動速度降低到100
+        if (boss->facingLeft) {
+            boss->position.x -= moveSpeed;
+        } else {
+            boss->position.x += moveSpeed;
+        }
+    }
+    
+    // 當進入攻擊範圍時，開始攻擊
     if (fabs(dx) <= attackTriggerDistance && !boss->isAttacking) {
         boss->isAttacking = true;
         boss->attackTimer = 0;
