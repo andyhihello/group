@@ -14,6 +14,8 @@
 #define GRAVITY 30.0f   //  模擬重力
 #define JUMP_STRENGTH -900.0f  //  跳躍的初始速度
 #define GROUND_Y 520
+#define BULLET_WIDTH 10
+#define BULLET_HEIGHT 10
 
 typedef struct {
     Vector2 position;

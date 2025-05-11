@@ -1,6 +1,5 @@
-
 #include "stage.h"
-
+#include "main.h"
 
 void stage_drawtutorial(Player *player) {
     // 背景半透明遮罩

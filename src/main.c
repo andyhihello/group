@@ -6,6 +6,7 @@
 #include "stage.h"
 #include "menu.h"
 #include "texture.h"
+#include "hack.h"
 
 
 int main() {
@@ -39,6 +40,9 @@ int main() {
     boss_init(&boss);
 
     int debug = 0;
+
+    HackScene hackScene;
+    hack_init(&hackScene);
 
     
 
@@ -87,6 +91,21 @@ int main() {
                 player_attack(&player, camera);
                 stage2_update(&player, &boss);
                 boss_update(&boss,&player);
+                
+                // 只在boss未死亡时更新黑客小游戏
+                if (!boss.isDead) {
+                    hack_update(&hackScene, &boss, &player);
+                }
+                
+                // 如果黑客场景激活，绘制它
+                if (hackScene.isActive) {
+                    hack_draw(&hackScene);
+                }
+            }
+            else if (player.stage == 3) {
+                // 在stage 3中更新和显示黑客场景
+                hack_update(&hackScene, &boss, &player);
+                hack_draw(&hackScene);
             }
 
             if(player.tutorial){
@@ -138,12 +157,38 @@ int main() {
             }
             else if (player.stage == 2) {
                 stage2_draw(textures.stage2Background);
+                boss_update(&boss, &player);
+                player_drawbullet(&player, camera);
                 boss_draw(&boss, &textures);
                 player_draw(&player, &textures);
-                player_drawbullet(&player, camera);
                 
                 if(debug) {
                     player_drawhitbox(&player);
+                    boss_drawhitbox(&boss);
+                    // 修改子弹碰撞箱的显示
+                    for (int i = 0; i < MAX_BULLETS; i++) {
+                        if (player.bullets[i].active) {
+                            DrawRectangleLines(
+                                player.bullets[i].position.x,
+                                player.bullets[i].position.y,
+                                BULLET_WIDTH,
+                                BULLET_HEIGHT,
+                                RED
+                            );
+                        }
+                    }
+                }
+                
+                // 检查Boss是否死亡
+                if (boss.isDead) {
+                    const char* text = "GAME COMPLETE!";
+                    int fontSize = 60;
+                    Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 2);
+                    Vector2 textPos = {
+                        screenWidth/2 - textSize.x/2,
+                        screenHeight/2 - textSize.y/2
+                    };
+                    DrawText(text, textPos.x, textPos.y, fontSize, WHITE);
                 }
             }
             EndMode2D();
