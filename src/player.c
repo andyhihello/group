@@ -1,8 +1,13 @@
+#include "raylib.h"
 #include "player.h"
+#include "boss.h"
 #include "main.h"
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
 float upgradeEffectTimer = 0.0f; // 特效剩餘時間
 const float upgradeEffectDuration = 1.0f; // 特效持續秒數
+
+// 在文件開頭添加靜態變量
+static int frameCount = 0;
 
 void player_hitbox(Player *player) {
     player->hitbox = (Rectangle){
@@ -32,7 +37,8 @@ void player_init(Player *player){
     player->speed = 300;
     player->stage = 1;
     player->tutorial = 0;
-
+    player->controlsReversed = false;
+    player->controlReverseTimer = 0.0f;
 
     // 設定升級用參數
     player->upgrade_reload_cost = 2;      // 換彈升級要20 coin
@@ -66,8 +72,68 @@ void player_move(Player *player,float deltaTime){
     if (player->invincibleCooldownLeft > 0.0f) {
         player->invincibleCooldownLeft -= deltaTime;
     }
-    // 左移
+    if (player->controlsReversed){
+        // 移動反轉從左移改成右移
     if (IsKeyDown(KEY_A)) {
+        player->position.x += player->speed * deltaTime;
+
+        // 更新玩家碰撞矩形
+        player_hitbox(player);
+
+        // 如果碰到牆，就把角色卡在牆的左側
+        if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - stage1_wall.width - playerXoffset;
+
+        player->facingRight = true;
+    }
+
+    // 移動反轉從右移改成左移
+    if (IsKeyDown(KEY_D)) {
+        player->position.x -= player->speed * deltaTime;
+
+        // 更新玩家碰撞矩形
+        player_hitbox(player); 
+
+        // 如果碰到牆，就把角色卡在牆的右側
+        if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + playerWidth - playerXoffset;           
+
+        player->facingRight = false;
+    }
+
+    //跑步動畫
+    if (IsKeyDown(KEY_A) || IsKeyDown(KEY_D)) {
+        player->frameTimer += GetFrameTime();
+        player->isRunning = true;
+        if (player->frameTimer >= 0.1f) {
+            player->currentFrame++;
+            if (player->currentFrame >= 9) player->currentFrame = 0;
+            player->frameTimer = 0;
+        }
+    } else {
+        player->currentFrame = 0;
+        player->isRunning = false;
+    }
+    
+    // 限制玩家不能超出背景範圍
+    if (player->position.x < -50) player->position.x = -50;
+    if (player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
+
+    //跳躍從W改成S
+    if (IsKeyPressed(KEY_S) && !player->isJumping) {
+        player->velocityY = JUMP_STRENGTH;  
+        player->isJumping = true;
+    }
+    player->position.y += player->velocityY * deltaTime ;
+    player->velocityY += GRAVITY;  
+    if (player->position.y > GROUND_Y) {
+        player->position.y = GROUND_Y;
+        player->velocityY = 0;
+        player->isJumping = false;  
+    }
+    }
+    
+    else{
+        // 左移
+        if (IsKeyDown(KEY_A)) {
         player->position.x -= player->speed * deltaTime;
 
         // 更新玩家碰撞矩形
@@ -122,7 +188,7 @@ void player_move(Player *player,float deltaTime){
         player->velocityY = 0;
         player->isJumping = false;  
     }
-
+    }
     // 更新碰撞矩形
     player_hitbox(player); 
 
@@ -164,8 +230,6 @@ void player_UI(Player *player) {
         snprintf(reloadText, sizeof(reloadText), "Reloading... %.1f", player->reloadTimeLeft);
         DrawText(reloadText, screenWidth - 200, 30, 20, WHITE);
     }
-
-
 
     DrawText("Skill Upgrades:", 10, 140, 20, GOLD);
 
@@ -214,10 +278,30 @@ void player_UI(Player *player) {
         DrawText("E: Shield Ready!", screenWidth - 200, 60, 20, GREEN);
     }
 
+    // 顯示控制反轉狀態和計時器
+    char controlText[32];
+    sprintf(controlText, "Controls Reversed: %s", player->controlsReversed ? "YES" : "NO");
+    DrawText(controlText, 10, 100, 20, player->controlsReversed ? RED : GREEN);
+
+    // 如果控制被反轉，顯示剩餘時間
+    if (player->controlsReversed) {
+        char timerText[32];
+        sprintf(timerText, "Reverse Time: %.1f", player->controlReverseTimer);
+        DrawText(timerText, 10, 130, 20, RED);
+    }
 }
 
-void player_attack(Player *player,Camera2D camera){
+void player_attack(Player *player, Camera2D camera) {
     Vector2 fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+
+    // 更新武器禁用計時器
+    if (player->weaponDisabled) {
+        player->weaponDisableTimer -= GetFrameTime();
+        if (player->weaponDisableTimer <= 0) {
+            player->weaponDisabled = false;
+            player->weaponDisableTimer = 0;
+        }
+    }
 
     // 換彈邏輯：按 R 鍵開始換彈
     if (IsKeyPressed(KEY_R) && player->ammo < player->maxAmmo && player->reloadTimeLeft <= 0) {
@@ -227,8 +311,8 @@ void player_attack(Player *player,Camera2D camera){
 
     if(player->reloading) player_reload(player);
  
-    //射擊(按左鍵)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
+    //射擊(按左鍵)，只有在武器未被禁用時才能射擊
+    if (!player->weaponDisabled && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (!player->bullets[i].active) {
@@ -249,7 +333,6 @@ void player_attack(Player *player,Camera2D camera){
             }
         }
     }
-
 }
 
 void player_skillupgrade(Player *player) {
@@ -423,6 +506,17 @@ void player_drawhitbox(Player *player){
 }
 
 void player_update(Player *player) {
+    frameCount++;
+    
+    // 更新控制反轉計時器
+    if (player->controlsReversed) {
+        player->controlReverseTimer -= GetFrameTime();
+        if (player->controlReverseTimer <= 0) {
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+        }
+    }
+    
     // 更新子彈位置
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (player->bullets[i].active) {
@@ -434,6 +528,32 @@ void player_update(Player *player) {
                 player->bullets[i].active = false;
             }
         }
+    }
+
+    // 根據控制反轉狀態調整移動方向
+    float moveDirection = player->controlsReversed ? -1.0f : 1.0f;
+    
+    // 水平移動
+    if (IsKeyDown(KEY_LEFT)) {
+        player->position.x -= player->speed * GetFrameTime() * moveDirection;
+    }
+    if (IsKeyDown(KEY_RIGHT)) {
+        player->position.x += player->speed * GetFrameTime() * moveDirection;
+    }
+    
+    // 跳躍
+    if (IsKeyDown(KEY_SPACE) && player->isGrounded) {
+        player->velocity.y = -player->jumpForce * moveDirection;
+        player->isGrounded = false;
+    }
+
+    // 更新碰撞矩形
+    player_hitbox(player); 
+
+    // 撞到牆底
+    if (player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
+        player->position.y = stage1_wall.y + stage1_wall.height;  
+        player->velocityY = 0;
     }
 }
 

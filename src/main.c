@@ -115,6 +115,7 @@ int main() {
                 }
             }
 
+            player_update(&player);  // 確保這行代碼存在且被執行
 
         } 
         else if (currentGameState == SETTINGS) {

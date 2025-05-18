@@ -16,6 +16,7 @@
 #define GROUND_Y 520
 #define BULLET_WIDTH 10
 #define BULLET_HEIGHT 10
+#define WEAPON_DISABLE_TIME 2.0f  // 武器禁用時間（秒）
 
 typedef struct {
     Vector2 position;
@@ -66,6 +67,16 @@ typedef struct {
     int reload_upgrade_times;     // 換彈已升級幾次
     int ammo_upgrade_times;       // 容量已升級幾次
     int invincible_upgrade_times; // 無敵CD已升級幾次
+
+    bool controlsReversed;     // 控制是否反轉
+    float controlReverseTimer; // 控制反轉計時器
+
+    bool isGrounded;
+    Vector2 velocity;
+    float jumpForce;
+
+    float weaponDisableTimer;  // 武器禁用倒計時
+    bool weaponDisabled;       // 武器是否被禁用
 } Player;
 
 void player_hitbox(Player *player);
@@ -78,5 +89,6 @@ void player_skillupgrade(Player *player);
 void player_drawbullet(Player *player, Camera2D camera);              // 子彈移動與繪製
 void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
 void player_drawhitbox(Player *player);      //debug
+void player_update(Player *player);  // 添加這行
 
 #endif
