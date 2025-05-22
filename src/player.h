@@ -17,6 +17,7 @@
 #define BULLET_WIDTH 10
 #define BULLET_HEIGHT 10
 #define WEAPON_DISABLE_TIME 2.0f  // 武器禁用時間（秒）
+#define shootEffectDuration 0.1f
 
 typedef struct {
     Vector2 position;
@@ -78,6 +79,8 @@ typedef struct {
 
     float weaponDisableTimer;  // 武器禁用倒計時
     bool weaponDisabled;       // 武器是否被禁用
+
+    float shootEffectTimer;
 } Player;
 
 void player_hitbox(Player *player);

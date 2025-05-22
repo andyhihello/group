@@ -131,7 +131,7 @@ int main() {
         // 開始繪製
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
+        
         if (currentGameState == MENU) {
             drawMenu();
         } 
@@ -210,7 +210,7 @@ int main() {
         else if (currentGameState == SETTINGS) {
             // 在這裡繪製設定畫面
         }
-
+        stage_drawgridlines();
         EndDrawing();
     }
 

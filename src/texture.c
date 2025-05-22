@@ -12,6 +12,7 @@ void loadGameTextures(GameTextures *textures) {
     }
     textures->shieldTexture = LoadTexture("resource/player/shield.png");
     textures->playerBullet = LoadTexture("resource/player/bullet.png");
+    textures->shooting = LoadTexture("resource/player/shooting.png");
     
     // Boss
     for (int i = 0; i < 6; i++) {
@@ -49,7 +50,9 @@ void loadGameTextures(GameTextures *textures) {
 void unloadGameTextures(GameTextures *textures) {
     UnloadTexture(textures->playerStand);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->playerRun[i]);
-
+    UnloadTexture(textures->shieldTexture);
+    UnloadTexture(textures->playerBullet);
+    UnloadTexture(textures->shooting);
     for (int i = 0; i < 6; i++) UnloadTexture(textures->bossAttack[i]);
 
     for (int i = 0; i < 5; i++) UnloadTexture(textures->dronePatrol[i]);

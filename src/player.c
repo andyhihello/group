@@ -33,8 +33,8 @@ void player_init(Player *player){
     memset(player->bullets, 0, sizeof(player->bullets));
     player->reloadtime = 3;
     player->reloadTimeLeft = 0;
-    player->ammo = 15;
-    player->maxAmmo = 15;
+    player->ammo = 100;
+    player->maxAmmo = 100;
     player->speed = 300;
     player->stage = 1;
     player->tutorial = 0;
@@ -53,6 +53,8 @@ void player_init(Player *player){
     player->reload_upgrade_times = 0;
     player->ammo_upgrade_times = 0;
     player->invincible_upgrade_times = 0;
+
+    player->shootEffectTimer = 0.0f;
 }
 
 void player_move(Player *player,float deltaTime){
@@ -293,7 +295,9 @@ void player_UI(Player *player) {
 }
 
 void player_attack(Player *player, Camera2D camera) {
-    Vector2 fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    Vector2 fireOrigin;
+    if(player->facingRight) fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    if(!player->facingRight)fireOrigin = (Vector2){ player->position.x -20, player->position.y + 170 };
 
     // 更新武器禁用計時器
     if (player->weaponDisabled) {
@@ -314,6 +318,7 @@ void player_attack(Player *player, Camera2D camera) {
  
     //射擊(按左鍵)，只有在武器未被禁用時才能射擊
     if (!player->weaponDisabled && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
+        player->shootEffectTimer = shootEffectDuration;
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (!player->bullets[i].active) {
@@ -474,8 +479,6 @@ void player_drawbullet(Player *player, Camera2D camera, GameTextures *textures) 
     }
 }
 
-
-
 void player_draw(Player *player, GameTextures *textures) {
     Texture2D frame;
 
@@ -519,6 +522,27 @@ void player_draw(Player *player, GameTextures *textures) {
             0.0f,
             (Color){255, 255, 255, 180}
         );
+    }
+
+    if (player->shootEffectTimer > 0.0f) {
+        Vector2 effectPos = player->position;
+
+        if (player->facingRight) {
+            effectPos.x += 200;
+        } else {
+            effectPos.x -= 30;  // shooting.png 寬 60，向左縮一點
+        }
+        effectPos.y += 160; // 可視情況微調 Y 值
+
+        Rectangle src = { 0, 0, 60, 29 };
+        if (!player->facingRight) src.width = -60; // 左翻轉
+
+        Rectangle dest = { effectPos.x, effectPos.y, 60, 29 };
+        Vector2 origin = { 0, 0 };
+
+        DrawTexturePro(textures->shooting, src, dest, origin, 0.0f, WHITE);
+
+        player->shootEffectTimer -= GetFrameTime();
     }
 }
 

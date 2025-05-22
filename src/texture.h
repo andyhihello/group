@@ -8,6 +8,7 @@ typedef struct {
     Texture2D playerRun[9];
     Texture2D shieldTexture;
     Texture2D playerBullet;
+    Texture2D shooting;
 
     Texture2D bossAttack[6];
 

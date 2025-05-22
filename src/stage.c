@@ -72,3 +72,16 @@ void stage2_draw(Texture2D *backgrounds) {
 void stage2_update(Player *player, Boss *boss) {
     boss_update(boss, player);
 }
+
+void stage_drawgridlines() {
+    int gridSize = 20;
+    Color lineColor = Fade(GRAY, 0.5f);  // 半透明灰色
+
+    for (int x = 0; x <= screenWidth; x += gridSize) {
+        DrawLine(x, 0, x, screenHeight, lineColor);
+    }
+
+    for (int y = 0; y <= screenHeight; y += gridSize) {
+        DrawLine(0, y, screenWidth, y, lineColor);
+    }
+}
