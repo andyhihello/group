@@ -173,18 +173,14 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
     float dist = enemy_distanceX(drone_center, player_center);  // 只算 X 軸
 
-    drone->facingRight = (player_center.x < drone_center.x);
+    
 
     EnemyState previousState = drone->state;  // 新增：記錄上一個狀態
 
     // 狀態切換邏輯
-    if (dist > 900) {
-        drone->state = PATROL;
-    } else if (dist <= 900 && dist > 800) {
-        drone->state = CHASE;
-    } else if (dist <= 800) {
-        drone->state = ATTACK;
-    }
+    if (dist <= 800 && dist > 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = CHASE;
+    else if (dist <= 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = ATTACK;
+    else drone->state = PATROL;
     
     // 狀態改變時，重設動畫
     if (drone->state != previousState) {
@@ -195,16 +191,19 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
     switch (drone->state) {
         case PATROL:
-            drone->position.x += sin(GetTime()) * 4.0f;
-            
+            float move = sin(GetTime()) * 4.0f;
+            drone->position.x += move;
+            if(move > 0)drone->facingRight = false;
+            if(move < 0)drone->facingRight = true;        
             drone->frameTimer += GetFrameTime();
             if (drone->frameTimer >= 0.1f) {  // 控制攻擊動畫播放速度
                 drone->currentFrame++;
-                if (drone->currentFrame >= 4) drone->currentFrame = 0;  // 假設攻擊動畫有 4 張圖
+                if (drone->currentFrame >= 4) drone->currentFrame = 0;  // 攻擊動畫有 4 張圖
                 drone->frameTimer = 0;
             }
             break;
         case CHASE:
+            drone->facingRight = (player_center.x < drone_center.x);
             if ((player->hitbox.x + player->hitbox.width / 2) > drone->position.x) {
                 drone->position.x += 200.0f * deltaTime;
             } else {
@@ -219,7 +218,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
             break;
         case ATTACK:
-
+            drone->facingRight = (player_center.x < drone_center.x);
             drone->frameTimer += deltaTime;
             if (drone->frameTimer >= 0.4f) {
                 drone->currentFrame++;
@@ -232,7 +231,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
                 enemy_DroneFireLaser(drone, player);
             }
             else if(drone->currentFrame != 3){
-                drone->laser.active == false;
+                drone->laser.active = false;
             }
             break;
     }

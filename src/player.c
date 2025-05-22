@@ -20,7 +20,7 @@ void player_hitbox(Player *player) {
 
 void player_init(Player *player){
     // 設定腳色初始設定
-    player->position = (Vector2){14300, 300};
+    player->position = (Vector2){300, 300};
     player->hp = 100;
     player->coin = 100;
     player->damage = 5;
@@ -452,7 +452,6 @@ void player_drawbullet(Player *player, Camera2D camera) {
         }
     }
 }
-
 
 void player_draw(Player *player, GameTextures *textures) {
     Texture2D frame;

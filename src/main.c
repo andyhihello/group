@@ -21,22 +21,19 @@ int main() {
     initMenu(textures.menuBackground);
     GameState currentGameState = MENU;
     Player player;
-    
+    Boss boss;
     Drone drone[MAX_DRONES];
     Soldier soldier;
-
-    
+    HackScene hackScene;
     Camera2D camera = { 0 };
-    camera.target = player.position;
-    camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
-    camera.zoom = 1.0f;
-    float camX = player.position.x;
-    float halfScreen = screenWidth * 0.4f;
-    Boss boss;
+    
+    float camX;
+    float halfScreen;
+    
     int debug = 0;
     bool Isinit = false;
 
-    HackScene hackScene;
+    
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -57,6 +54,12 @@ int main() {
                 enemy_initSoldier(&soldier);
                 boss_init(&boss);
                 hack_init(&hackScene);
+
+                camera.target = player.position;
+                camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
+                camera.zoom = 1.0f;
+                camX = player.position.x;
+                halfScreen = screenWidth * 0.4f;
                 Isinit = true;
             }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
