@@ -21,15 +21,11 @@ int main() {
     initMenu(textures.menuBackground);
     GameState currentGameState = MENU;
     Player player;
-    player_init(&player);
+    
     Drone drone[MAX_DRONES];
     Soldier soldier;
 
-    for (int i = 0; i < MAX_DRONES; i++) {
-        enemy_initDrone(&drone[i]);
-        drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
-    }
-    enemy_initSoldier(&soldier);
+    
     Camera2D camera = { 0 };
     camera.target = player.position;
     camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
@@ -37,15 +33,10 @@ int main() {
     float camX = player.position.x;
     float halfScreen = screenWidth * 0.4f;
     Boss boss;
-    boss_init(&boss);
-
     int debug = 0;
+    bool Isinit = false;
 
     HackScene hackScene;
-    hack_init(&hackScene);
-
-    
-
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -53,10 +44,21 @@ int main() {
 
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
-            updateMenu(&currentGameState, &player, &boss, drone);
+            updateMenu(&currentGameState);
         } 
 
         else if (currentGameState == GAME) {
+            if(!Isinit){
+                player_init(&player);
+                for (int i = 0; i < MAX_DRONES; i++) {
+                    enemy_initDrone(&drone[i]);
+                    drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
+                }
+                enemy_initSoldier(&soldier);
+                boss_init(&boss);
+                hack_init(&hackScene);
+                Isinit = true;
+            }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
             if (player.stage == 1){
                 player_move(&player, deltaTime);  

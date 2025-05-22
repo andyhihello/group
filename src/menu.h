@@ -12,7 +12,7 @@
 
 // 函數
 void initMenu(Texture2D background);
-void updateMenu(GameState *currentGameState, Player *player, Boss *boss, Drone *drone); // 注意這裡傳遞的是指標，以便在 menu.c 中修改 main.c 的變數
+void updateMenu(GameState *currentGameState); // 注意這裡傳遞的是指標，以便在 menu.c 中修改 main.c 的變數
 void drawMenu();
 
 #endif

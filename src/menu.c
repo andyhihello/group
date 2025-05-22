@@ -28,16 +28,14 @@ void initMenu(Texture2D background) {
 }
 
 // 是否按按鈕，更新現在的選單狀態
-void updateMenu(GameState *currentGameState, Player *player, Boss *boss, Drone *drone) {
+void updateMenu(GameState *currentGameState) {
     Vector2 mousePoint = GetMousePosition();
 
     // 檢查滑鼠是否懸停在 "Start" 按鈕上
     if (CheckCollisionPointRec(mousePoint, startButton)) {
         startButtonColor = startButtonHoverColor;
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            player_init(player);
             TraceLog(LOG_INFO, "Start Button Pressed");
-            
             *currentGameState = GAME;  // 切換場景
         }
     } else {

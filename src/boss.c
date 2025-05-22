@@ -401,9 +401,7 @@ void boss_update(Boss *boss, Player *player) {
 void boss_draw(Boss *boss, GameTextures *textures) {
     if (boss->isDead) return;
     
-    int frameIndex = boss->currentFrame < BOSS_ATTACK_FRAME_COUNT
-                   ? boss->currentFrame
-                   : (BOSS_ATTACK_FRAME_COUNT * 2 - 1) - boss->currentFrame;
+    int frameIndex = boss->currentFrame;
 
     frameIndex %= BOSS_ATTACK_FRAME_COUNT;
 
