@@ -150,7 +150,7 @@ int main() {
                     enemy_drawLaser(&drone[i], &textures);      
                 }
                 
-                player_drawbullet(&player,camera);
+                player_drawbullet(&player,camera,&textures);
                 
                 if(debug){
                     player_drawhitbox(&player);
@@ -164,7 +164,7 @@ int main() {
             else if (player.stage == 2) {
                 stage2_draw(textures.stage2Background);
                 boss_update(&boss, &player);
-                player_drawbullet(&player, camera);
+                player_drawbullet(&player, camera,&textures);
                 boss_draw(&boss, &textures);
                 player_draw(&player, &textures);
                 

@@ -2,6 +2,7 @@
 #include "player.h"
 #include "boss.h"
 #include "main.h"
+#include <math.h>
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
 float upgradeEffectTimer = 0.0f; // 特效剩餘時間
 const float upgradeEffectDuration = 1.0f; // 特效持續秒數
@@ -411,47 +412,69 @@ void player_skillupgrade(Player *player) {
 
 }
 
-void player_drawbullet(Player *player, Camera2D camera) {
-    // 计算镜头的视野范围（世界坐标）
-    int sceneWidth;
-    if(player->stage == 1) {
-        sceneWidth = stage1Width;
-    } else if(player->stage == 2) {
-        sceneWidth = stage2Width;  // 或者设置为 stage2 的宽度
-    }
-    
+void player_drawbullet(Player *player, Camera2D camera, GameTextures *textures) {
+    int sceneWidth = (player->stage == 1) ? stage1Width : stage2Width;
+
     Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
     Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 
     for (int i = 0; i < MAX_BULLETS; i++) {
-        Rectangle bulletRect = { player->bullets[i].position.x, player->bullets[i].position.y, SIZE_BULLET, SIZE_BULLET};
-        if (player->bullets[i].active) {
-            player->bullets[i].position.x += player->bullets[i].speed.x;
-            player->bullets[i].position.y += player->bullets[i].speed.y;
+        Bullet *b = &player->bullets[i];
+        if (b->active) {
+            // 更新子彈位置
+            b->position.x += b->speed.x;
+            b->position.y += b->speed.y;
 
-            // 超出地图范围，停用子弹
-            if (player->bullets[i].position.x < 0 || player->bullets[i].position.x > sceneWidth ||
-                player->bullets[i].position.y < 0 || player->bullets[i].position.y > screenHeight || 
-                (player->stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
-                player->bullets[i].active = false;
+            // 子彈飛出邊界或碰到牆壁則失效
+            if (b->position.x < 0 || b->position.x > sceneWidth ||
+                b->position.y < 0 || b->position.y > screenHeight ||
+                (player->stage == 1 && CheckCollisionRecs(b->hitbox, stage1_wall))) {
+                b->active = false;
                 continue;
             }
 
-            float dx = player->bullets[i].position.x - player->bullets[i].startPosition.x;
-            float dy = player->bullets[i].position.y - player->bullets[i].startPosition.y;
-            float distance = sqrtf(dx * dx + dy * dy);
-            if (distance >= 500.0f) {
-                player->bullets[i].active = false;
+            // 超出飛行距離則失效
+            float dx = b->position.x - b->startPosition.x;
+            float dy = b->position.y - b->startPosition.y;
+            if (sqrtf(dx * dx + dy * dy) >= 500.0f) {
+                b->active = false;
                 continue;
             }
-            // 在画面内才绘制
-            if (player->bullets[i].position.x >= screenTopLeft.x && player->bullets[i].position.x <= screenBottomRight.x &&
-                player->bullets[i].position.y >= screenTopLeft.y && player->bullets[i].position.y <= screenBottomRight.y) {
-                DrawCircleV(player->bullets[i].position, SIZE_BULLET, RED);
+
+            // 若在鏡頭內，繪製子彈
+            if (b->position.x >= screenTopLeft.x && b->position.x <= screenBottomRight.x &&
+                b->position.y >= screenTopLeft.y && b->position.y <= screenBottomRight.y) {
+
+                // 設定旋轉角度
+                float angle = atan2f(b->speed.y, b->speed.x) * RAD2DEG;
+
+                // 設定貼圖繪製資訊
+                Rectangle source = { 0, 0, (float)textures->playerBullet.width, (float)textures->playerBullet.height };
+                Rectangle dest = {
+                    b->position.x,
+                    b->position.y,
+                    SIZE_BULLET,
+                    SIZE_BULLET
+                };
+                Vector2 origin = { SIZE_BULLET / 2.0f, SIZE_BULLET / 2.0f };
+
+                // 更新 hitbox 為未旋轉的矩形，與圖中央對齊
+                b->hitbox = (Rectangle){
+                    b->position.x - SIZE_BULLET / 2.0f,
+                    b->position.y - SIZE_BULLET / 2.0f,
+                    SIZE_BULLET,
+                    SIZE_BULLET
+                };
+
+                // 繪製子彈圖片（可旋轉）
+                DrawTexturePro(textures->playerBullet, source, dest, origin, angle, WHITE);
+
             }
         }
     }
 }
+
+
 
 void player_draw(Player *player, GameTextures *textures) {
     Texture2D frame;
@@ -502,6 +525,13 @@ void player_draw(Player *player, GameTextures *textures) {
 
 void player_drawhitbox(Player *player){
     DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
+
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        Bullet *b = &player->bullets[i];
+        if (b->active) {
+            DrawRectangleLinesEx(b->hitbox, 2, WHITE);
+        }
+    }
 }
 
 void player_update(Player *player) {
@@ -556,26 +586,3 @@ void player_update(Player *player) {
     }
 }
 
-void player_shoot(Player *player) {
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        if (!player->bullets[i].active) {
-            // 設置子彈的初始位置為玩家位置
-            player->bullets[i].position = (Vector2){
-                player->position.x,  // 直接使用玩家 x 坐標
-                player->position.y   // 直接使用玩家 y 坐標
-            };
-            player->bullets[i].active = true;
-            break;
-        }
-    }
-}
-
-void player_updateBullets(Player *player) {
-    // 删除这个函数中的边界检查，因为已经在 player_drawbullet 中处理了
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        if (player->bullets[i].active) {
-            player->bullets[i].position.x += player->bullets[i].speed.x;
-            player->bullets[i].position.y += player->bullets[i].speed.y;
-        }
-    }
-}

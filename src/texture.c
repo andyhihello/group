@@ -11,6 +11,7 @@ void loadGameTextures(GameTextures *textures) {
         textures->playerRun[i] = LoadTexture(path);
     }
     textures->shieldTexture = LoadTexture("resource/player/shield.png");
+    textures->playerBullet = LoadTexture("resource/player/bullet.png");
     
     // Boss
     for (int i = 0; i < 6; i++) {
