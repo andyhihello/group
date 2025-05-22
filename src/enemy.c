@@ -180,6 +180,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
     // 狀態切換邏輯
     if (dist <= 800 && dist > 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = CHASE;
     else if (dist <= 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = ATTACK;
+    else if (dist <= 500) drone->state = ATTACK;
     else drone->state = PATROL;
     
     // 狀態改變時，重設動畫
@@ -191,7 +192,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
     switch (drone->state) {
         case PATROL:
-            float move = sin(GetTime()) * 4.0f;
+            float move = sin(0.7*GetTime()) * 4.0f;
             drone->position.x += move;
             if(move > 0)drone->facingRight = false;
             if(move < 0)drone->facingRight = true;        
