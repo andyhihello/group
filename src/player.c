@@ -21,7 +21,7 @@ void player_hitbox(Player *player) {
 
 void player_init(Player *player){
     // 設定腳色初始設定
-    player->position = (Vector2){300, 300};
+    player->position = (Vector2){14300, 300};
     player->hp = 100;
     player->coin = 100;
     player->damage = 5;
@@ -40,6 +40,9 @@ void player_init(Player *player){
     player->tutorial = 0;
     player->controlsReversed = false;
     player->controlReverseTimer = 0.0f;
+    player->originalDamage = player->damage;  // 保存原始值
+    player->originalSpeed = player->speed;    // 保存原始值
+    player->debuffTimer = 0;
 
     // 設定升級用參數
     player->upgrade_reload_cost = 2;      // 換彈升級要20 coin
@@ -607,6 +610,16 @@ void player_update(Player *player) {
     if (player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
         player->position.y = stage1_wall.y + stage1_wall.height;  
         player->velocityY = 0;
+    }
+
+    // 更新debuff計時器
+    if (player->debuffTimer > 0) {
+        player->debuffTimer -= GetFrameTime();
+        if (player->debuffTimer <= 0) {
+            // 恢復正常屬性
+            player->damage = player->originalDamage;
+            player->speed = player->originalSpeed;
+        }
     }
 }
 

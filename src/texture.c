@@ -15,10 +15,16 @@ void loadGameTextures(GameTextures *textures) {
     textures->shooting = LoadTexture("resource/player/shooting.png");
     
     // Boss
-    for (int i = 0; i < 6; i++) {
-        sprintf(path, "resource/boss/attack/attack%d.png", i+1);
+    textures->boss = LoadTexture("resource/boss/Boss.png");
+    
+    // Load boss attack animation frames
+    for (int i = 0; i < 2; i++) {
+        sprintf(path, "resource/boss/Boss attack/Boss atack 0%d.png", i+1);
         textures->bossAttack[i] = LoadTexture(path);
     }
+    
+    textures->bossShield = LoadTexture("resources/boss_shield.png");
+    textures->bossLight = LoadTexture("resource/boss/Boss light.png");
 
     // Drone
     for (int i = 0; i < 5; i++) {
@@ -53,7 +59,16 @@ void unloadGameTextures(GameTextures *textures) {
     UnloadTexture(textures->shieldTexture);
     UnloadTexture(textures->playerBullet);
     UnloadTexture(textures->shooting);
-    for (int i = 0; i < 6; i++) UnloadTexture(textures->bossAttack[i]);
+    
+    // Unload boss textures
+    UnloadTexture(textures->boss);
+    
+    for (int i = 0; i < 2; i++) {
+        UnloadTexture(textures->bossAttack[i]);
+    }
+    
+    UnloadTexture(textures->bossShield);
+    UnloadTexture(textures->bossLight);
 
     for (int i = 0; i < 5; i++) UnloadTexture(textures->dronePatrol[i]);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->droneChase[i]);

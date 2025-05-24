@@ -81,6 +81,10 @@ typedef struct {
     bool weaponDisabled;       // 武器是否被禁用
 
     float shootEffectTimer;
+
+    float debuffTimer;  // 用於追蹤debuff持續時間
+    float originalDamage;  // 保存原始攻击力
+    float originalSpeed;   // 保存原始移动速度
 } Player;
 
 void player_hitbox(Player *player);

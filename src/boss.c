@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <math.h>
 
-
 void boss_init(Boss *boss) {
     // 调整初始位置到偏左侧
     boss->position = (Vector2){1000, screenHeight - 400};
@@ -57,11 +56,61 @@ void boss_init(Boss *boss) {
         boss->drones[i].directionTimer = 0;
         boss_initDroneBullet(&boss->drones[i].bullet);
     }
+
+    boss->health = BOSS_HEALTH;  // 確保初始化時設置為最大血量
+    boss->isPhase2 = false;      // 確保初始化時不是第二階段
+    boss->shieldActive = false;
+    boss->shieldTimer = 0.0f;
+    boss->shieldCooldown = 0.0f;
+    boss->absorbedDamage = 0.0f;
+    boss->shieldExplosionActive = false;
+    boss->shieldExplosionRadius = 0.0f;
+    boss->shieldExplosionPosition = (Vector2){0, 0};
 }
 
 void boss_update(Boss *boss, Player *player) {
     if (boss->isDead) return;
-    
+
+    // 更新防護罩狀態
+    if (boss->shieldActive) {
+        boss->shieldTimer -= GetFrameTime();
+        if (boss->shieldTimer <= 0) {
+            boss->shieldActive = false;
+            // 觸發爆炸
+            boss->shieldExplosionActive = true;
+            boss->shieldExplosionPosition = boss->position;
+            boss->shieldExplosionRadius = BOSS_SHIELD_EXPLOSION_RADIUS;
+            
+            // 檢查玩家是否在爆炸範圍內
+            float dx = player->position.x - boss->shieldExplosionPosition.x;
+            float dy = player->position.y - boss->shieldExplosionPosition.y;
+            float distance = sqrtf(dx * dx + dy * dy);
+            
+            if (distance <= BOSS_SHIELD_EXPLOSION_RADIUS) {
+                float damage = boss->absorbedDamage * BOSS_SHIELD_DAMAGE_RATIO;
+                player->hp -= damage;
+            }
+            
+            boss->absorbedDamage = 0.0f;
+        }
+    } else {
+        boss->shieldCooldown -= GetFrameTime();
+        if (boss->shieldCooldown <= 0 && boss->isPhase2) {
+            boss->shieldActive = true;
+            boss->shieldTimer = BOSS_SHIELD_DURATION;
+            boss->shieldCooldown = BOSS_SHIELD_COOLDOWN;
+        }
+    }
+
+    // 更新爆炸效果
+    if (boss->shieldExplosionActive) {
+        boss->shieldExplosionRadius -= GetFrameTime() * 500.0f; // 爆炸效果收縮速度
+        if (boss->shieldExplosionRadius <= 0) {
+            boss->shieldExplosionActive = false;
+        }
+    }
+
+    // 只有在沒有防護罩和爆炸效果時才執行其他動作
     // 檢查子彈是否超出場景邊界
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (player->bullets[i].active) {
@@ -88,8 +137,10 @@ void boss_update(Boss *boss, Player *player) {
     }
     
     // 如果不在攻擊範圍內，移動boss
-    if (fabs(dx) > attackTriggerDistance && !boss->isAttacking) {
-        float moveSpeed = 100.0f * GetFrameTime();  // 移動速度降低到100
+    if (fabs(dx) > attackTriggerDistance && !boss->isAttacking && !boss->shieldActive && !boss->shieldExplosionActive && !boss->energyPulseActive) {
+        float baseSpeed = 100.0f * GetFrameTime();  // 基礎移動速度
+        float moveSpeed = boss->isPhase2 ? baseSpeed * 1.5f : baseSpeed;  // 第二階段提高50%速度
+        
         if (boss->facingLeft) {
             boss->position.x -= moveSpeed;
         } else {
@@ -98,7 +149,7 @@ void boss_update(Boss *boss, Player *player) {
     }
     
     // 當進入攻擊範圍時，開始攻擊
-    if (fabs(dx) <= attackTriggerDistance && !boss->isAttacking) {
+    if (fabs(dx) <= attackTriggerDistance && !boss->isAttacking && !boss->shieldActive && !boss->shieldExplosionActive) {
         boss->isAttacking = true;
         boss->attackTimer = 0;
     }
@@ -194,12 +245,18 @@ void boss_update(Boss *boss, Player *player) {
             }
 
             if (CheckCollisionRecs(bulletRect, adjustedHitbox)) {
-                boss->health -= player->damage;
-                player->bullets[i].active = false;
-                
-                if (boss->health <= 0) {
-                    boss->isDead = true;
+                if (boss->shieldActive) {
+                    // 在防護罩期間，吸收傷害並累積
+                    boss->absorbedDamage += player->damage;
+                } else {
+                    // 沒有防護罩時才減少血量
+                    boss->health -= player->damage;
+                    
+                    if (boss->health <= 0) {
+                        boss->isDead = true;
+                    }
                 }
+                player->bullets[i].active = false;
                 break;
             }
         }
@@ -396,24 +453,104 @@ void boss_update(Boss *boss, Player *player) {
             }
         }
     }
+
+    // 檢查是否進入第二階段
+    if (boss->health <= BOSS_PHASE2_HEALTH && !boss->isPhase2) {
+        printf("Boss entering Phase 2! Health: %f, Threshold: %f\n", boss->health, BOSS_PHASE2_HEALTH);
+        boss->isPhase2 = true;
+        boss->canUseEnergyPulse = true;
+    }
+    
+    // 第二階段技能邏輯
+    if (boss->isPhase2) {
+        printf("Phase 2 active, can use energy pulse: %d\n", boss->canUseEnergyPulse);
+        if (boss->energyPulseActive) {
+            printf("Energy pulse active, radius: %f\n", boss->energyPulseRadius);
+        }
+        // 更新能量脈衝冷卻
+        if (!boss->canUseEnergyPulse) {
+            boss->energyPulseCooldown -= GetFrameTime();
+            if (boss->energyPulseCooldown <= 0) {
+                boss->canUseEnergyPulse = true;
+            }
+        }
+        
+        // 釋放能量脈衝
+        if (boss->canUseEnergyPulse && !boss->energyPulseActive) {
+            boss->energyPulseActive = true;
+            boss->energyPulseRadius = 0;
+            
+            // 根據Boss面向決定脈衝生成位置
+            float offset = 100.0f;  // 偏移距離
+            if (boss->facingLeft) {
+                // Boss朝左，脈衝在左側
+                boss->energyPulsePosition = (Vector2){
+                    boss->position.x - offset,
+                    boss->position.y
+                };
+            } else {
+                // Boss朝右，脈衝在右側
+                boss->energyPulsePosition = (Vector2){
+                    boss->position.x + offset,
+                    boss->position.y
+                };
+            }
+            
+            boss->canUseEnergyPulse = false;
+            boss->energyPulseCooldown = ENERGY_PULSE_COOLDOWN;
+        }
+        
+        // 更新能量脈衝效果
+        if (boss->energyPulseActive) {
+            boss->energyPulseRadius += ENERGY_PULSE_SPEED * GetFrameTime();
+            
+            // 檢查是否擊中玩家
+            float dx = player->position.x - boss->energyPulsePosition.x;
+            float dy = player->position.y - boss->energyPulsePosition.y;
+            float distanceToPlayer = sqrtf(dx * dx + dy * dy);
+            
+            if (distanceToPlayer <= boss->energyPulseRadius) {
+                // 只在debuff結束時才重新施加效果
+                if (player->debuffTimer <= 0) {
+                    // 降低玩家攻擊力和移動速度
+                    player->damage = player->originalDamage * 0.5f;  // 降低50%攻擊力
+                    player->speed = player->originalSpeed * 0.5f;   // 降低50%移動速度
+                    player->debuffTimer = ENERGY_PULSE_DURATION;
+                }
+            }
+            
+            // 脈衝結束
+            if (boss->energyPulseRadius >= ENERGY_PULSE_RADIUS) {
+                boss->energyPulseActive = false;
+            }
+        }
+    }
 }
 
 void boss_draw(Boss *boss, GameTextures *textures) {
     if (boss->isDead) return;
     
-    int frameIndex = boss->currentFrame;
+    // 根據狀態選擇要繪製的紋理
+    Texture2D currentTexture;
+    if (boss->isAttacking) {
+        // 使用攻擊動畫幀
+        currentTexture = textures->bossAttack[boss->currentFrame % 2];  // 確保只使用前兩幀
+    } else {
+        // 使用移動圖片
+        currentTexture = textures->boss;
+    }
 
-    frameIndex %= BOSS_ATTACK_FRAME_COUNT;
+    // 設置繪製參數
+    Rectangle source = {0, 0, (float)currentTexture.width, (float)currentTexture.height};
+    Rectangle dest = {boss->position.x, boss->position.y, (float)currentTexture.width, (float)currentTexture.height};
+    Vector2 origin = {currentTexture.width / 2, currentTexture.height / 2};
 
-    Texture2D frame = textures->bossAttack[frameIndex];
-    float width = (float)frame.width;
-    float height = (float)frame.height;
+    // 根據朝向翻轉圖片 - 修改這裡: 當facingLeft為true時不翻轉
+    if (!boss->facingLeft) {
+        source.width = -source.width;
+    }
 
-    Rectangle source = {0, 0, boss->facingLeft ? width : -width, height};
-    Rectangle dest = {boss->position.x, boss->position.y, width, height};
-    Vector2 origin = {width / 2, height / 2};
-
-    DrawTexturePro(frame, source, dest, origin, 0, WHITE);
+    DrawTexturePro(currentTexture, source, dest, origin, 0, WHITE);
     // DEBUG: 显示攻击范围和碰撞箱
     if (IsKeyDown(KEY_TAB)) {
         // 显示攻击范围
@@ -486,6 +623,63 @@ void boss_draw(Boss *boss, GameTextures *textures) {
             DrawCircleV(boss->drones[i].bullet.position, BOSS_DRONE_BULLET_RADIUS, YELLOW);
         }
     }
+
+    // 繪製能量脈衝效果
+    if (boss->energyPulseActive) {
+        // 繪製能量脈衝效果
+        Rectangle source = { 0, 0, 296, 79 };  // 使用新的圖片尺寸
+        Rectangle dest = {
+            boss->facingLeft ? 
+                boss->energyPulsePosition.x - 248 :  // 朝左時的偏移
+                boss->energyPulsePosition.x - 50,   // 朝右時的偏移
+            boss->energyPulsePosition.y + 100,   // 調低位置
+            296,  // 寬度
+            79    // 高度
+        };
+        Vector2 origin = { 0, 0 };
+
+        // 根據boss朝向調整圖片 - 反轉邏輯
+        if (!boss->facingLeft) {
+            source.width = -source.width;  // 右翻轉
+        }
+
+        DrawTexturePro(textures->bossLight, source, dest, origin, 0.0f, WHITE);
+    }
+
+    // 繪製防護罩
+    if (boss->shieldActive) {
+        float shieldOffset = boss->facingLeft ? 0 : -200;
+        DrawCircleGradient(
+            (int)(boss->position.x + BOSS_WIDTH/2 + shieldOffset),
+            (int)(boss->position.y + BOSS_HEIGHT/2),
+            BOSS_WIDTH * 1.5f,
+            (Color){0, 255, 255, 100},
+            (Color){0, 255, 255, 0}
+        );
+
+        // 在右上角顯示吸收的傷害值
+        char damageText[32];
+        sprintf(damageText, "吸收傷害: %.0f", boss->absorbedDamage);
+        DrawText(
+            damageText,
+            GetScreenWidth() - 200,  // 距離右邊200像素
+            50,                      // 距離頂部50像素
+            20,
+            WHITE
+        );
+    }
+
+    // 繪製爆炸效果
+    if (boss->shieldExplosionActive) {
+        float explosionOffset = boss->facingLeft ? 0 : -200;  // 爆炸效果也需要相同的偏移
+        DrawCircleGradient(
+            (int)(boss->shieldExplosionPosition.x + explosionOffset),
+            (int)boss->shieldExplosionPosition.y,
+            boss->shieldExplosionRadius,
+            (Color){255, 0, 0, 150},
+            (Color){255, 0, 0, 0}
+        );
+    }
 }
 
 void boss_drawhitbox(Boss *boss) {
@@ -555,6 +749,15 @@ void boss_checkDroneBulletHit(BossDroneBullet *bullet, Player *player) {
         player->weaponDisabled = true;
         player->weaponDisableTimer = WEAPON_DISABLE_TIME;
         bullet->active = false;
+    }
+}
+
+// 修改玩家傷害處理函數
+void boss_takeDamage(Boss *boss, float damage) {
+    if (boss->shieldActive) {
+        boss->absorbedDamage += damage;
+    } else {
+        boss->health -= damage;
     }
 }
 
