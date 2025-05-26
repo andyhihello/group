@@ -38,6 +38,19 @@
 #define BOSS_DRONE_BULLET_RADIUS 5.0f
 #define BOSS_DRONE_BULLET_COOLDOWN 3.0f
 
+#define BOSS_PHASE2_THRESHOLD 0.5f  // 50%血量閾值
+#define BOSS_PHASE2_HEALTH (BOSS_HEALTH * 0.5f)  // 第二階段觸發血量（50%）
+#define ENERGY_PULSE_DAMAGE 10
+#define ENERGY_PULSE_DURATION 3.0f  // 脈衝持續時間
+#define ENERGY_PULSE_COOLDOWN 20.0f  // 能量脉冲冷却时间
+#define ENERGY_PULSE_RADIUS 300.0f  // 脈衝範圍
+#define ENERGY_PULSE_SPEED 300.0f   // 能量脉冲扩散速度
+
+#define BOSS_SHIELD_DURATION 5.0f  // 防護罩持續時間
+#define BOSS_SHIELD_COOLDOWN 60.0f  // 防護罩冷卻時間
+#define BOSS_SHIELD_EXPLOSION_RADIUS 3000.0f  // 爆炸範圍
+#define BOSS_SHIELD_DAMAGE_RATIO 1.0f  // 傷害轉換比例
+
 typedef struct {
     Vector2 position;
     Vector2 direction;
@@ -90,6 +103,20 @@ typedef struct {
     bool dronesActive;
     float droneSpawnTimer;
     float droneSpawnCooldown;
+    bool isPhase2;
+    bool canUseEnergyPulse;
+    float energyPulseTimer;
+    float energyPulseCooldown;
+    bool energyPulseActive;
+    float energyPulseRadius;
+    Vector2 energyPulsePosition;
+    bool shieldActive;
+    float shieldTimer;
+    float shieldCooldown;
+    float absorbedDamage;
+    bool shieldExplosionActive;
+    float shieldExplosionRadius;
+    Vector2 shieldExplosionPosition;
 } Boss;
 
 void boss_init(Boss *boss);

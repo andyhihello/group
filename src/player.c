@@ -24,6 +24,30 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
+    // 設定腳色初始設定
+    player->position = (Vector2){14300, 300};
+    player->hp = 100;
+    player->coin = 100;
+    player->damage = 5;
+    player->invincible = false;
+    player->invincibleDuration = 3.0f;
+    player->invincibleTimeLeft = 0.0f;
+    player->invincibleCooldown = 15.0f;
+    player->invincibleCooldownLeft = 0.0f;
+    memset(player->bullets, 0, sizeof(player->bullets));
+    player->reloadtime = 3;
+    player->reloadTimeLeft = 0;
+    player->ammo = 100;
+    player->maxAmmo = 100;
+    player->speed = 300;
+    player->stage = 1;
+    player->tutorial = 0;
+    player->controlsReversed = false;
+    player->controlReverseTimer = 0.0f;
+    player->originalDamage = player->damage;  // 保存原始值
+    player->originalSpeed = player->speed;    // 保存原始值
+    player->debuffTimer = 0;
+    
     // 基本屬性初始化
     player->position = (Vector2){300, 300};   // 起始位置
     player->hp = 100000000;                         // 初始血量
