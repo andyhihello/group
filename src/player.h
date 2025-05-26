@@ -76,6 +76,10 @@ typedef struct {
     float weaponDisableTimer;     // 武器禁用剩餘時間
     bool weaponDisabled;          // 是否無法射擊
 
+    int originalDamage;
+    float originalSpeed;
+    float debuffTimer;
+
     // 動畫與方向
     int currentFrame;             // 當前動畫幀
     float frameTimer;             // 幀時間控制器
