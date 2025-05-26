@@ -24,33 +24,10 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    // 設定腳色初始設定
-    player->position = (Vector2){14300, 300};
-    player->hp = 100;
-    player->coin = 100;
-    player->damage = 5;
-    player->invincible = false;
-    player->invincibleDuration = 3.0f;
-    player->invincibleTimeLeft = 0.0f;
-    player->invincibleCooldown = 15.0f;
-    player->invincibleCooldownLeft = 0.0f;
-    memset(player->bullets, 0, sizeof(player->bullets));
-    player->reloadtime = 3;
-    player->reloadTimeLeft = 0;
-    player->ammo = 100;
-    player->maxAmmo = 100;
-    player->speed = 300;
-    player->stage = 1;
-    player->tutorial = 0;
-    player->controlsReversed = false;
-    player->controlReverseTimer = 0.0f;
-    player->originalDamage = player->damage;  // 保存原始值
-    player->originalSpeed = player->speed;    // 保存原始值
-    player->debuffTimer = 0;
     
     // 基本屬性初始化
     player->position = (Vector2){300, 300};   // 起始位置
-    player->hp = 100000000;                         // 初始血量
+    player->hp = 100000;                         // 初始血量
     player->coin = 0;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
@@ -60,6 +37,10 @@ void player_init(Player *player){
     player->invincibleCooldown = 15.0f;       // 無敵技能冷卻時間
     player->invincibleCooldownLeft = 0.0f;    // 無敵剩餘冷卻
     memset(player->bullets, 0, sizeof(player->bullets)); // 清空子彈狀態
+    player->originalDamage = player->damage;  // 保存原始值
+    player->originalSpeed = player->speed;    // 保存原始值
+    player->debuffTimer = 0;
+
 
     // 子彈與移動相關設定
     player->reloadtime = 3;                   // 換彈所需時間（秒）
@@ -339,7 +320,9 @@ void player_UI(Player *player) {
 }
 
 void player_attack(Player *player,Camera2D camera){
-    Vector2 fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    Vector2 fireOrigin;
+    if(player->facingRight) fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    if(!player->facingRight)fireOrigin = (Vector2){ player->position.x -20, player->position.y + 170 };
 
     // 換彈邏輯：按 R 鍵開始換彈
     if (IsKeyPressed(KEY_R) && player->ammo < player->maxAmmo && player->reloadTimeLeft <= 0) {
@@ -351,6 +334,7 @@ void player_attack(Player *player,Camera2D camera){
  
     //射擊(按左鍵)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
+        player->shootEffectTimer = shootEffectDuration;
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (!player->bullets[i].active) {
