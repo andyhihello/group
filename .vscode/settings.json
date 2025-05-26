@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "player.h": "c"
+        "player.h": "c",
+        "boss.h": "c",
+        "raylib.h": "c",
+        "hack.h": "c"
     }
 }

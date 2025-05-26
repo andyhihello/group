@@ -33,8 +33,6 @@ int main() {
     int debug = 0;
     bool Isinit = false;
 
-    
-
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
@@ -63,8 +61,8 @@ int main() {
                 Isinit = true;
             }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
-            if (player.stage == 1){
-                player_move(&player, deltaTime);  
+            if (player.stage == 1 && !player.dead){
+                player_update(&player, deltaTime);  
                 for (int i = 0; i < MAX_DRONES; i++) {
                     enemy_updateDrone(&drone[i], &player, deltaTime); 
                 }  
@@ -86,8 +84,8 @@ int main() {
                 
             }
 
-            else if (player.stage == 2) {
-                player_move(&player,deltaTime);
+            else if (player.stage == 2 && !player.dead) {
+                player_update(&player,deltaTime);
                 camX = player.position.x;
                 // 使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
@@ -116,11 +114,14 @@ int main() {
             if(player.tutorial){
                 if (IsKeyPressed(KEY_SPACE)) {
                     player.tutorial++;
-                    if(player.tutorial == 3)player.tutorial = false; 
+                    if(player.tutorial == 4)player.tutorial = false; 
                 }
             }
 
-            player_update(&player);  // 確保這行代碼存在且被執行
+            else if(player.dead){
+                player_dead(&player, &currentGameState,&Isinit);
+            }   
+
 
         } 
         else if (currentGameState == SETTINGS) {
@@ -198,8 +199,9 @@ int main() {
                 }
             }
             EndMode2D();
-
-            player_UI(&player);           
+ 
+            if(!player.dead)player_UI(&player);    
+            else player_deadUI(&player);           
             if(player.tutorial){
                 stage_drawtutorial(&player);
             }
@@ -210,7 +212,7 @@ int main() {
         else if (currentGameState == SETTINGS) {
             // 在這裡繪製設定畫面
         }
-        stage_drawgridlines();
+        //stage_drawgridlines(); // 修正圖片用網格
         EndDrawing();
     }
 
