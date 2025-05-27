@@ -36,6 +36,7 @@ int main() {
     
     int debug = 0;
     bool Isinit = false;
+    bool deadsound = false;
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -85,6 +86,13 @@ int main() {
                 
             }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
+
+            //聲音設定
+            SetSoundVolume(sounds.upgrade,sfxVolume);
+            SetSoundVolume(sounds.attack,sfxVolume);
+            SetSoundVolume(sounds.playerdied,sfxVolume);
+            SetSoundVolume(sounds.enterbossstage,sfxVolume);
+
             if (player.stage == 1 && !player.dead){
                 player_update(&player, deltaTime);  
                 for (int i = 0; i < MAX_DRONES; i++) {
@@ -99,7 +107,7 @@ int main() {
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
                 player_skillupgrade(&player,&sounds);
-                stage_door(&player);
+                stage_door(&player,&sounds);
 
                 for (int i = 0; i < MAX_DRONES; i++) {
                     enemy_laserDamagePlayer(&drone[i], &player,&sounds);
@@ -160,7 +168,13 @@ int main() {
 
 
             if(player.dead){
-                player_dead(&player, &currentGameState,&Isinit);
+                if(!deadsound) {
+                    PlaySound(sounds.playerdied);
+                    deadsound = true;
+                }
+                player_dead(&player, &currentGameState,&Isinit,&sounds,&deadsound);
+                
+                
             }   
 
             if(boss.isDead){

@@ -59,7 +59,9 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     sounds->stagemusic = LoadMusicStream("resource/sound/stagemusic.mp3");
     sounds->tutorialmusic = LoadMusicStream("resource/sound/tutorialmusic.mp3");
     sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
-    sounds->attack = LoadSound("resource/sound/hurt.mp3");
+    sounds->attack = LoadSound("resource/sound/attack.mp3");
+    sounds->playerdied = LoadSound("resource/sound/playerdied.mp3");
+    sounds->enterbossstage = LoadSound("resource/sound/enterbossstage.mp3");
 }
 
 void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {

@@ -7,7 +7,7 @@
 #include "boss.h"
 
 void stage_drawtutorial(Player *player);
-void stage_door(Player *player);
+void stage_door(Player *player,GameSounds *sounds);
 void stage_drawdoortext();
 void stage_drawhitbox();
 

@@ -106,7 +106,7 @@ void player_skillupgrade(Player *player,GameSounds *sounds);
 void player_drawbullet(Player *player, Camera2D camera ,GameTextures *textures);              // 子彈移動與繪製
 void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
 void player_drawhitbox(Player *player);      //debug
-void player_dead(Player *player,GameState *currentGameState,bool *Isinit); // 死亡復活或回menu
+void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSounds *sounds,bool *deadsound); // 死亡復活或回menu
 void player_deadUI(Player *player); //死亡介面
 
 #endif

@@ -275,7 +275,7 @@ void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime) {
 
 void enemy_bulletDamageDrone(Player *player, Drone *drone,GameSounds *sounds) {
 
-    SetSoundVolume(sounds->attack,sfxVolume);
+    
     if (!drone->active) return;  // 跳過已經死掉的 Drone
 
     for (int i = 0; i < MAX_BULLETS; i++) {

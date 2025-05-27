@@ -36,8 +36,8 @@ typedef struct {
     Music tutorialmusic;
     Sound upgrade;
     Sound attack;
-    Sound dead;
-    Sound bossDeath;
+    Sound playerdied;
+    Sound enterbossstage;
     Sound win;
 } GameSounds;
 
