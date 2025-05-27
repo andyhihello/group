@@ -27,9 +27,21 @@ typedef struct {
     Texture2D stage1Background[5];
     Texture2D stage2Background[2];
     Texture2D menuBackground;
+    Texture2D settingBackground;
 } GameTextures;
 
-void loadGameTextures(GameTextures *textures);
-void unloadGameTextures(GameTextures *textures);
+typedef struct {
+    Music menumusic;
+    Music stagemusic;
+    Music tutorialmusic;
+    Sound upgrade;
+    Sound attack;
+    Sound dead;
+    Sound bossDeath;
+    Sound win;
+} GameSounds;
+
+void loadGameTextures(GameTextures *textures, GameSounds *sounds);
+void unloadGameTextures(GameTextures *textures, GameSounds *sounds);
 
 #endif

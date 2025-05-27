@@ -117,7 +117,7 @@ void enemy_DroneFireLaser(Drone* drone, Player *player);
 /// 機器士兵發射散射子彈
 void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player);
 
-void enemy_laserDamagePlayer(Drone *drone, Player *player);
+void enemy_laserDamagePlayer(Drone *drone, Player *player,GameSounds *sounds);
 
 void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* soldier);
 
@@ -131,7 +131,7 @@ void enemy_updateDrone(Drone* drone,Player *player, float deltaTime);
 void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime);
 
 
-void enemy_bulletDamageDrone(Player *player, Drone *drone);
+void enemy_bulletDamageDrone(Player *player, Drone *drone,GameSounds *sounds);
 
 
 

@@ -13,7 +13,7 @@ static Color settingsButtonHoverColor = GRAY;
 static Texture2D backgroundTexture; // 用於儲存背景圖片
 
 // 初始化選單
-void initMenu(Texture2D background) {
+void menu_init(Texture2D background) {
     backgroundTexture = background; // 儲存背景圖片
 
     // 計算start button的位置
@@ -28,7 +28,7 @@ void initMenu(Texture2D background) {
 }
 
 // 是否按按鈕，更新現在的選單狀態
-void updateMenu(GameState *currentGameState) {
+void menu_update(GameState *currentGameState) {
     Vector2 mousePoint = GetMousePosition();
 
     // 檢查滑鼠是否懸停在 "Start" 按鈕上
@@ -56,7 +56,7 @@ void updateMenu(GameState *currentGameState) {
 }
 
 // 繪製選單畫面
-void drawMenu() {
+void menu_draw() {
 
     DrawTexture(backgroundTexture, 0, 0, WHITE);//畫主畫面的背景圖片
     DrawText("Game", screenWidth / 2 - MeasureText("Game", 40) / 2, 100, 40, BLACK);//畫Game(遊戲名)

@@ -94,3 +94,45 @@ void stage_drawgridlines() {
         DrawLine(0, y, screenWidth, y, lineColor);
     }
 }
+
+// 儲存通關時間到檔案
+void stage_saveCompletionTime(float completeTime) {
+    FILE *file = fopen("compeletetime.txt", "a");
+    if (file) {
+        fprintf(file, "%.2f\n", completeTime);
+        fclose(file);
+    }
+}
+
+// 讀取並顯示前 5 名最快時間
+void stage_displayTopCompletionTimes() {
+    float times[100];
+    int count = 0;
+
+    FILE *file = fopen("compeletetime.txt", "r");
+    if (file) {
+        while (fscanf(file, "%f", &times[count]) != EOF && count < 1000) {
+            count++;
+        }
+        fclose(file);
+    }
+
+    // 排序（氣泡排序）
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (times[j] > times[j + 1]) {
+                float temp = times[j];
+                times[j] = times[j + 1];
+                times[j + 1] = temp;
+            }
+        }
+    }
+
+    // 顯示前 5 名
+    DrawText("Top 5 Completion Times:", 100, 100, 30, GOLD);
+    for (int i = 0; i < count && i < 5; i++) {
+        char buffer[64];
+        sprintf(buffer, "%d. %.2f seconds", i + 1, times[i]);
+        DrawText(buffer, 1000, 140 + i * 30, 25, WHITE);
+    }
+} 

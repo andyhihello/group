@@ -2,6 +2,7 @@
 #include "player.h"
 #include "boss.h"
 #include "main.h"
+#include "setting.h"
 #include <math.h>
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
 float upgradeEffectTimer = 0.0f; // 特效剩餘時間
@@ -26,9 +27,10 @@ void player_hitbox(Player *player) {
 void player_init(Player *player){
     
     // 基本屬性初始化
+    player->stage = 1;
     player->position = (Vector2){300, 300};   // 起始位置
     player->hp = 100000;                         // 初始血量
-    player->coin = 0;                         // 初始金幣
+    player->coin = 100;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
     player->invincible = false;               // 是否無敵
@@ -49,7 +51,7 @@ void player_init(Player *player){
     player->maxAmmo = 100;                    // 最大子彈數
     player->speed = 300;                      // 移動速度
     player->stage = 1;                        // 起始關卡
-    player->tutorial = 0;                     // 教學進度
+    player->tutorial = 1;                     // 教學進度
     player->controlsReversed = false;         // 是否控制反轉
     player->controlReverseTimer = 0.0f;       // 控制反轉剩餘時間
 
@@ -358,9 +360,10 @@ void player_attack(Player *player,Camera2D camera){
 
 }
 
-void player_skillupgrade(Player *player) {
+void player_skillupgrade(Player *player,GameSounds *sounds) {
 
     int upgradeType;
+    SetSoundVolume(sounds->upgrade,sfxVolume);
 
     if (IsKeyPressed(KEY_ONE)) {  // 按 1 升級換彈速度
         upgradeType = 1;
@@ -385,6 +388,7 @@ void player_skillupgrade(Player *player) {
                 player->reload_upgrade_times++;
                 player->upgrade_reload_cost += 2;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "reloadupgrade!");
             } else {
                 upgradeFailTimer = upgradeFailDuration;
@@ -403,6 +407,7 @@ void player_skillupgrade(Player *player) {
                 player->ammo_upgrade_times++;
                 player->upgrade_ammo_cost += 2;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "ammoupgrade!");
             } else {
                 upgradeFailTimer = upgradeFailDuration;
@@ -420,6 +425,7 @@ void player_skillupgrade(Player *player) {
                 player->upgrade_invincible_cost += 3;
                 player->invincible_upgrade_times++;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "invincibleupgrade!");
             } else {
                 upgradeFailTimer = upgradeFailDuration;

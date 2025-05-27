@@ -1,5 +1,6 @@
 #include "enemy.h"
 #include "main.h"
+#include "setting.h"
  
 
 // 計算兩點之間的距離
@@ -123,10 +124,12 @@ void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player) {
 }
 
 // 判斷雷射是否擊中玩家
-void enemy_laserDamagePlayer(Drone *drone, Player *player) {
+void enemy_laserDamagePlayer(Drone *drone, Player *player,GameSounds *sounds) {
+    
     if (drone->laser.active == false||player->invincible == true) return;
     if (CheckCollisionRecs(drone->laserhitbox, player->hitbox) ) {
         player->hp -= drone->laser.damage;
+        
     }
 }
 
@@ -270,9 +273,9 @@ void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime) {
     }
 }
 
-void enemy_bulletDamageDrone(Player *player, Drone *drone) {
+void enemy_bulletDamageDrone(Player *player, Drone *drone,GameSounds *sounds) {
 
-
+    SetSoundVolume(sounds->attack,sfxVolume);
     if (!drone->active) return;  // 跳過已經死掉的 Drone
 
     for (int i = 0; i < MAX_BULLETS; i++) {
@@ -285,7 +288,8 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone) {
             };
 
             if (CheckCollisionRecs(bulletRect, drone->hitbox)) {
-                drone->health -= player->damage;                      // 扣血
+                drone->health -= player->damage;     
+                PlaySound(sounds->attack);                 // 扣血
                 player->bullets[i].active = false;       // 子彈消失
     
                 if (drone->health <= 0) {

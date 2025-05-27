@@ -7,18 +7,22 @@
 #include "menu.h"
 #include "texture.h"
 #include "hack.h"
+#include "setting.h"
 
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
+    InitAudioDevice();
     SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
     GameTextures textures;
-    loadGameTextures(&textures);
-    
+    GameSounds sounds;
+    loadGameTextures(&textures,&sounds);
+    double startTime;
+    bool savingdata;
 
     // 初始化
-    initMenu(textures.menuBackground);
+    menu_init(textures.menuBackground);
     GameState currentGameState = MENU;
     Player player;
     Boss boss;
@@ -39,8 +43,24 @@ int main() {
 
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
-            updateMenu(&currentGameState);
+            menu_update(&currentGameState);
+            if (!IsMusicStreamPlaying(sounds.menumusic)) {
+                PlayMusicStream(sounds.menumusic);
+            }
+
+            SetMusicVolume(sounds.menumusic, bgmVolume);
+            UpdateMusicStream(sounds.menumusic);
         } 
+        
+        else if (currentGameState == SETTINGS) {
+            updateSettings(&currentGameState);
+            if (!IsMusicStreamPlaying(sounds.menumusic)) {
+                PlayMusicStream(sounds.menumusic);
+            }
+
+            SetMusicVolume(sounds.menumusic, bgmVolume);
+            UpdateMusicStream(sounds.menumusic);
+        }
 
         else if (currentGameState == GAME) {
             if(!Isinit){
@@ -59,6 +79,10 @@ int main() {
                 camX = player.position.x;
                 halfScreen = screenWidth * 0.4f;
                 Isinit = true;
+
+                startTime = GetTime();
+                savingdata = false;
+                
             }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
             if (player.stage == 1 && !player.dead){
@@ -74,14 +98,35 @@ int main() {
                 if (camX > stage1Width - screenWidth * 0.6f) camX = stage1Width - screenWidth * 0.6f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
-                player_skillupgrade(&player);
+                player_skillupgrade(&player,&sounds);
                 stage_door(&player);
 
                 for (int i = 0; i < MAX_DRONES; i++) {
-                    enemy_laserDamagePlayer(&drone[i], &player);
-                    enemy_bulletDamageDrone(&player, &drone[i]); 
+                    enemy_laserDamagePlayer(&drone[i], &player,&sounds);
+                    enemy_bulletDamageDrone(&player, &drone[i],&sounds); 
                 } 
                 
+                if(player.tutorial){
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        player.tutorial++;
+                        if(player.tutorial == 4)player.tutorial = false; 
+                    }
+                    if (!IsMusicStreamPlaying(sounds.tutorialmusic)) {
+                        PlayMusicStream(sounds.tutorialmusic);
+                    }
+
+                    SetMusicVolume(sounds.tutorialmusic, bgmVolume);
+                    UpdateMusicStream(sounds.tutorialmusic);
+                    
+                }
+                else{
+                    if (!IsMusicStreamPlaying(sounds.stagemusic)) {
+                        PlayMusicStream(sounds.stagemusic);
+                    }
+
+                    SetMusicVolume(sounds.stagemusic, bgmVolume);
+                    UpdateMusicStream(sounds.stagemusic);
+                }
             }
 
             else if (player.stage == 2 && !player.dead) {
@@ -111,30 +156,35 @@ int main() {
                 hack_draw(&hackScene);
             }
 
-            if(player.tutorial){
-                if (IsKeyPressed(KEY_SPACE)) {
-                    player.tutorial++;
-                    if(player.tutorial == 4)player.tutorial = false; 
-                }
-            }
+            
 
-            else if(player.dead){
+
+            if(player.dead){
                 player_dead(&player, &currentGameState,&Isinit);
             }   
 
+            if(boss.isDead){
+                if(!savingdata){
+                    double completeTime = GetTime() - startTime;
+                    stage_saveCompletionTime(completeTime);
+                    savingdata = true;
+                }
+                if(IsKeyPressed(KEY_SPACE)){
+                    currentGameState = MENU;
+                    Isinit = false;
+                }
+            }
+
 
         } 
-        else if (currentGameState == SETTINGS) {
-            // 設定邏輯
-            // ...
-        }
+        
             
         // 開始繪製
         BeginDrawing();
         ClearBackground(RAYWHITE);
         
         if (currentGameState == MENU) {
-            drawMenu();
+            menu_draw();
         } 
         else if (currentGameState == GAME) {
 
@@ -188,14 +238,7 @@ int main() {
                 
                 // 检查Boss是否死亡
                 if (boss.isDead) {
-                    const char* text = "GAME COMPLETE!";
-                    int fontSize = 60;
-                    Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 2);
-                    Vector2 textPos = {
-                        screenWidth/2 - textSize.x/2,
-                        screenHeight/2 - textSize.y/2
-                    };
-                    DrawText(text, textPos.x, textPos.y, fontSize, WHITE);
+                    stage_displayTopCompletionTimes();
                 }
             }
             EndMode2D();
@@ -210,14 +253,14 @@ int main() {
             }
         } 
         else if (currentGameState == SETTINGS) {
-            // 在這裡繪製設定畫面
+            drawSettings(&textures);
         }
         //stage_drawgridlines(); // 修正圖片用網格
         EndDrawing();
     }
 
     // 釋放資源並關閉  
-    unloadGameTextures(&textures);
+    unloadGameTextures(&textures,&sounds);
 
     CloseWindow();
     return 0;

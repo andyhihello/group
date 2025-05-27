@@ -1,7 +1,7 @@
 #include "texture.h"
 #include <stdio.h>
 
-void loadGameTextures(GameTextures *textures) {
+void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     char path[100];
 
     // Player
@@ -51,9 +51,18 @@ void loadGameTextures(GameTextures *textures) {
         textures->stage2Background[i] = LoadTexture(path);
     }
     textures->menuBackground = LoadTexture("resource/scene/background.png");
+    textures->settingBackground = LoadTexture("resource/scene/settingbackground.png");
+
+
+    //sound
+    sounds->menumusic = LoadMusicStream("resource/sound/menumusic.mp3");
+    sounds->stagemusic = LoadMusicStream("resource/sound/stagemusic.mp3");
+    sounds->tutorialmusic = LoadMusicStream("resource/sound/tutorialmusic.mp3");
+    sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
+    sounds->attack = LoadSound("resource/sound/hurt.mp3");
 }
 
-void unloadGameTextures(GameTextures *textures) {
+void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
     UnloadTexture(textures->playerStand);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->playerRun[i]);
     UnloadTexture(textures->shieldTexture);
@@ -78,4 +87,12 @@ void unloadGameTextures(GameTextures *textures) {
     for (int i = 0; i < 5; i++) UnloadTexture(textures->stage1Background[i]);
     for (int i = 0; i < 2; i++) UnloadTexture(textures->stage2Background[i]);
     UnloadTexture(textures->menuBackground);
+
+    UnloadMusicStream(sounds->menumusic);
+    UnloadMusicStream(sounds->stagemusic);
+    UnloadMusicStream(sounds->tutorialmusic);
+    UnloadSound(sounds->upgrade);
+    UnloadSound(sounds->attack);
+
+    CloseAudioDevice();
 }
