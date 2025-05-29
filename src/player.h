@@ -93,6 +93,11 @@ typedef struct {
     // 教學與關卡
     int tutorial;                 // 教學階段（0: 無教學）
     int stage;                    // 關卡階段（1: 普通, 2: BOSS）
+    bool stageChanged;  // 添加stageChanged标志
+
+    float weakenTimer;      // 虛弱效果計時器
+    float controlTimer;     // 控制反轉計時器
+    float weaponTimer;      // 武器禁用計時器
 
 } Player;
 

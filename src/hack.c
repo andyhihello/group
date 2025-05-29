@@ -97,7 +97,8 @@ void hack_update(HackScene *scene, Boss *boss, Player *player) {
             boss->isDead = true;
             scene->isActive = false;
             scene->state = HACK_IDLE;
-            player->stage = 2;
+            player->stage = 4;
+            player->stageChanged = true;  // 设置stageChanged标志
         }
     }
 }

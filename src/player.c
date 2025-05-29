@@ -28,8 +28,9 @@ void player_init(Player *player){
     
     // 基本屬性初始化
     player->stage = 1;
+    player->stageChanged = true;  // 初始化stageChanged
     player->position = (Vector2){14300, 300};   // 起始位置
-    player->hp = 10;                         // 初始血量
+    player->hp = 100;                         // 初始血量
     player->coin = 100;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
@@ -40,7 +41,7 @@ void player_init(Player *player){
     player->invincibleCooldownLeft = 0.0f;    // 無敵剩餘冷卻
     memset(player->bullets, 0, sizeof(player->bullets)); // 清空子彈狀態
     player->originalDamage = player->damage;  // 保存原始值
-    player->originalSpeed = player->speed;    // 保存原始值
+    player->originalSpeed = 300.0f;        // 保存原始移動速度
     player->debuffTimer = 0;
     player->tutorial = 0;                     // 教學進度
 
@@ -49,11 +50,11 @@ void player_init(Player *player){
     player->reloadTimeLeft = 0;               // 換彈倒數時間
     player->ammo = 100;                       // 當前子彈數
     player->maxAmmo = 100;                    // 最大子彈數
-    player->speed = 300;                      // 移動速度
+    player->speed = 300.0f;        // 設置初始移動速度
     player->stage = 1;                        // 起始關卡
     player->controlsReversed = false;         // 是否控制反轉
     player->controlReverseTimer = 0.0f;       // 控制反轉剩餘時間
-
+    player->weaponDisabled = false;           // 武器禁用狀態
     // 升級系統參數初始化
     player->upgrade_reload_cost = 2;          // 第一次升級換彈所需金幣
     player->upgrade_ammo_cost = 1;            // 第一次升級彈容量所需金幣
@@ -200,6 +201,39 @@ void player_update(Player *player, float deltaTime) {
         }
         else upgradeFailTimer = upgradeFailDuration;
     }
+
+    // 更新 debuff 計時器
+    if (player->debuffTimer > 0) {
+        player->debuffTimer -= deltaTime;
+    }
+
+    // 更新虛弱效果計時器
+    if (player->weakenTimer > 0) {
+        player->weakenTimer -= deltaTime;
+        if (player->weakenTimer <= 0) {
+            player->damage = player->originalDamage;
+            player->speed = player->originalSpeed;
+            player->weakenTimer = 0;
+        }
+    }
+    
+    // 更新控制反轉計時器
+    if (player->controlTimer > 0) {
+        player->controlTimer -= deltaTime;
+        if (player->controlTimer <= 0) {
+            player->controlsReversed = false;
+            player->controlTimer = 0;
+        }
+    }
+    
+    // 更新武器禁用計時器
+    if (player->weaponTimer > 0) {
+        player->weaponTimer -= deltaTime;
+        if (player->weaponTimer <= 0) {
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+        }
+    }
 }
 
 void player_reload(Player *player){
@@ -305,18 +339,33 @@ void player_UI(Player *player) {
         DrawText("E: Shield Ready!", screenWidth - 200, 60, 20, GREEN);
     }
 
+    // 在右側顯示debuff狀態
+    int rightMargin = screenWidth - 300;  // 距離右邊緣300像素
+    int debuffY = 100;  // 起始Y座標
 
-
-    // 顯示控制反轉狀態和計時器
+    // 顯示控制反轉狀態
     char controlText[32];
     sprintf(controlText, "Controls Reversed: %s", player->controlsReversed ? "YES" : "NO");
-    DrawText(controlText, 10, 100, 20, player->controlsReversed ? RED : GREEN);
+    DrawText(controlText, rightMargin, debuffY, 20, player->controlsReversed ? RED : GREEN);
+    debuffY += 30;  // 下一個debuff的Y座標
 
-    // 如果控制被反轉，顯示剩餘時間
-    if (player->controlsReversed) {
+    // 顯示武器禁用狀態
+    char weaponText[32];
+    sprintf(weaponText, "Weapon Disabled: %s", player->weaponDisabled ? "YES" : "NO");
+    DrawText(weaponText, rightMargin, debuffY, 20, player->weaponDisabled ? RED : GREEN);
+    debuffY += 30;
+
+    // 顯示虛弱狀態
+    char weakText[32];
+    sprintf(weakText, "Weakened: %s", player->weakenTimer > 0 ? "YES" : "NO");
+    DrawText(weakText, rightMargin, debuffY, 20, player->weakenTimer > 0 ? RED : GREEN);
+    debuffY += 30;
+
+    // 如果有任何debuff生效，顯示剩餘時間
+    if (player->debuffTimer > 0) {
         char timerText[32];
-        sprintf(timerText, "Reverse Time: %.1f", player->controlReverseTimer);
-        DrawText(timerText, 10, 130, 20, RED);
+        sprintf(timerText, "Debuff Time: %.1f", player->debuffTimer);
+        DrawText(timerText, rightMargin, debuffY, 20, RED);
     }
 }
 
@@ -334,7 +383,10 @@ void player_attack(Player *player,Camera2D camera){
     if(player->reloading) player_reload(player);
  
     //射擊(按左鍵)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && 
+        player->ammo > 0 && 
+        player->reloadTimeLeft <= 0 && 
+        !player->weaponDisabled) {  // 添加武器禁用檢查
         player->shootEffectTimer = shootEffectDuration;
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {

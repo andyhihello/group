@@ -16,6 +16,14 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     
     // Boss
     textures->boss = LoadTexture("resource/boss/Boss.png");
+    for(int i = 1; i <= 5; i++) {
+        sprintf(path, "resource/boss/stage1/0%d.png", i);
+        textures->bossMovePhase1[i-1] = LoadTexture(path);
+    }
+    for(int i = 1; i <= 5; i++) {
+        sprintf(path, "resource/boss/stage2/0%d.png", i);
+        textures->bossMovePhase2[i-1] = LoadTexture(path);  // 第二阶段移动动画
+    }
     
     // Load boss attack animation frames
     for (int i = 0; i < 2; i++) {
@@ -24,7 +32,7 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     }
     
     textures->bossShield = LoadTexture("resources/boss_shield.png");
-    textures->bossLight = LoadTexture("resource/boss/Boss light.png");
+    textures->bossLight = LoadTexture("resource/boss/stage 2 light.png");
 
     // Drone
     for (int i = 0; i < 5; i++) {
@@ -52,6 +60,7 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     }
     textures->menuBackground = LoadTexture("resource/scene/background.png");
     textures->settingBackground = LoadTexture("resource/scene/settingbackground.png");
+    textures->stage4Background = LoadTexture("resource/scene/2-5.png");
 
 
     //sound
@@ -61,7 +70,9 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
     sounds->attack = LoadSound("resource/sound/attack.mp3");
     sounds->playerdied = LoadSound("resource/sound/playerdied.mp3");
-    sounds->enterbossstage = LoadSound("resource/sound/enterbossstage.mp3");
+    sounds->enterbossstage = LoadSound("resource/sound/boss first.mp3");
+    sounds->bossMusic = LoadMusicStream("resource/sound/boss ing.mp3");
+
 }
 
 void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
@@ -89,12 +100,17 @@ void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
     for (int i = 0; i < 5; i++) UnloadTexture(textures->stage1Background[i]);
     for (int i = 0; i < 2; i++) UnloadTexture(textures->stage2Background[i]);
     UnloadTexture(textures->menuBackground);
+    UnloadTexture(textures->settingBackground);
+    UnloadTexture(textures->stage4Background);
 
     UnloadMusicStream(sounds->menumusic);
     UnloadMusicStream(sounds->stagemusic);
     UnloadMusicStream(sounds->tutorialmusic);
     UnloadSound(sounds->upgrade);
     UnloadSound(sounds->attack);
+
+    // 卸载Boss相关音效
+    UnloadMusicStream(sounds->bossMusic);
 
     CloseAudioDevice();
 }

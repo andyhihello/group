@@ -16,6 +16,8 @@ typedef struct {
     Texture2D bossAttack[2];  // boss攻擊動畫幀
     Texture2D bossShield;   // boss護盾效果
     Texture2D bossLight;    // boss能量脈衝效果
+    Texture2D bossMovePhase1[5];  // Boss第一阶段移动动画（5帧）
+    Texture2D bossMovePhase2[5];  // Boss第二阶段移动动画（5帧）
 
     // Drone textures
     Texture2D dronePatrol[5];
@@ -28,6 +30,7 @@ typedef struct {
     Texture2D stage2Background[2];
     Texture2D menuBackground;
     Texture2D settingBackground;
+    Texture2D stage4Background;  // 添加stage4背景
 } GameTextures;
 
 typedef struct {
@@ -39,6 +42,8 @@ typedef struct {
     Sound playerdied;
     Sound enterbossstage;
     Sound win;
+    Music bossMusic;        // Boss房间背景音乐
+    Sound bossShieldSound;  // Boss护盾音效
 } GameSounds;
 
 void loadGameTextures(GameTextures *textures, GameSounds *sounds);

@@ -9,10 +9,10 @@
 #define BOSS_HEIGHT 300
 #define BOSS_SPEED 3
 #define BOSS_ATTACK_FRAME_COUNT 6  // 实际帧数为6（1,3,5,7,9,11）
-#define BOSS_ATTACK_RANGE 100.0f  // Boss攻击范围
+#define BOSS_ATTACK_RANGE 150.0f  // Boss攻击范围
 #define BOSS_ATTACK_COOLDOWN 2.0f
-#define BOSS_HEALTH 100
-#define BOSS_ATTACK_DAMAGE 20
+#define BOSS_HEALTH 1000
+#define BOSS_ATTACK_DAMAGE 5
 #define BOSS_PHASE1_THRESHOLD_DRONE 0.8f  // 新增：80%血量閾值
 #define MAX_DATA_WAVES 3
 #define DATA_WAVE_SPEED 500.0f
@@ -26,7 +26,7 @@
 #define BOSS_DRONE_HEIGHT 100
 #define BOSS_DRONE_SPEED 200.0f
 #define BOSS_DRONE_HEALTH 30
-#define BOSS_DRONE_DAMAGE 10
+#define BOSS_DRONE_DAMAGE 2
 #define BOSS_DRONE_ATTACK_RANGE 500.0f  // 增加攻击范围到300
 #define BOSS_DRONE_ATTACK_COOLDOWN 1.5f
 #define BOSS_DRONE_MOVE_RANGE 300.0f
@@ -50,6 +50,11 @@
 #define BOSS_SHIELD_COOLDOWN 60.0f  // 防護罩冷卻時間
 #define BOSS_SHIELD_EXPLOSION_RADIUS 3000.0f  // 爆炸範圍
 #define BOSS_SHIELD_DAMAGE_RATIO 1.0f  // 傷害轉換比例
+
+#define BOSS_ACTIVATION_RANGE 800.0f  // 新增：boss激活範圍
+
+// Boss攻击相关常量
+#define BOSS_ATTACK_DURATION 0.5f  // 攻击动画持续时间（秒）
 
 typedef struct {
     Vector2 position;
@@ -117,10 +122,11 @@ typedef struct {
     bool shieldExplosionActive;
     float shieldExplosionRadius;
     Vector2 shieldExplosionPosition;
+    bool isActive;  // 新增：boss是否已激活
 } Boss;
 
 void boss_init(Boss *boss);
-void boss_update(Boss *boss, Player *player);
+void boss_update(Boss *boss, Player *player, GameSounds *sounds);
 void boss_draw(Boss *boss, GameTextures *textures);
 void boss_drawhitbox(Boss *boss);
 

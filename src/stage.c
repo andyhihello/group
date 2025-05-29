@@ -81,8 +81,19 @@ void stage2_draw(Texture2D *backgrounds) {
     }
 }
 
-void stage2_update(Player *player, Boss *boss) {
-    boss_update(boss, player);
+void stage2_update(Boss *boss, Player *player, GameSounds *sounds) {
+    // 在进入stage2时播放音效
+    static bool firstEnter = true;
+    if (firstEnter) {
+        PlaySound(sounds->enterbossstage);  // 播放进入boss房的音效
+        PlayMusicStream(sounds->bossMusic); // 开始播放boss房背景音乐
+        firstEnter = false;
+    }
+    
+    // 持续更新boss房背景音乐
+    UpdateMusicStream(sounds->bossMusic);
+    
+    boss_update(boss, player, sounds);
 }
 
 void stage_drawgridlines() {
@@ -138,4 +149,9 @@ void stage_displayTopCompletionTimes() {
         sprintf(buffer, "%d. %.2f seconds", i + 1, times[i]);
         DrawText(buffer, 1000, 140 + i * 30, 25, WHITE);
     }
+}
+
+void stage4_draw(Texture2D background) {
+    DrawTexture(background, 0, 0, WHITE);
+    // 添加stage4的其他绘制逻辑
 } 

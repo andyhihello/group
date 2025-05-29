@@ -92,6 +92,8 @@ int main() {
             SetSoundVolume(sounds.attack,sfxVolume);
             SetSoundVolume(sounds.playerdied,sfxVolume);
             SetSoundVolume(sounds.enterbossstage,sfxVolume);
+            SetSoundVolume(sounds.enterbossstage,sfxVolume);  // 修正bossEnter为enterbossstage
+            SetMusicVolume(sounds.bossMusic,bgmVolume);       // 修正bossmusic为bossMusic
 
             if (player.stage == 1 && !player.dead){
                 player_update(&player, deltaTime);  
@@ -145,8 +147,8 @@ int main() {
                 if (camX > stage2Width - screenWidth * 0.8f) camX = stage2Width - screenWidth * 0.8f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f };
                 player_attack(&player, camera);
-                stage2_update(&player, &boss);
-                boss_update(&boss,&player);
+                stage2_update(&boss, &player, &sounds);
+                boss_update(&boss, &player, &sounds);
                 
                 // 只在boss未死亡时更新黑客小游戏
                 if (!boss.isDead) {
@@ -162,6 +164,22 @@ int main() {
                 // 在stage 3中更新和显示黑客场景
                 hack_update(&hackScene, &boss, &player);
                 hack_draw(&hackScene);
+            }
+            else if (player.stage == 4) {
+                if (player.stageChanged) {  // 当stage刚改变时
+                    player.position = (Vector2){ 100, 400 };  // 设置stage4的初始位置
+                    player.stageChanged = false;
+                }
+                
+                stage4_draw(textures.stage4Background);
+                player_update(&player, GetFrameTime());
+                player_draw(&player, &textures);
+                player_drawbullet(&player, camera, &textures);
+                
+                if(debug) {
+                    player_drawhitbox(&player);
+                    stage_drawhitbox();
+                }
             }
 
             
@@ -228,7 +246,7 @@ int main() {
             }
             else if (player.stage == 2) {
                 stage2_draw(textures.stage2Background);
-                boss_update(&boss, &player);
+                boss_update(&boss, &player, &sounds);
                 player_drawbullet(&player, camera,&textures);
                 boss_draw(&boss, &textures);
                 player_draw(&player, &textures);

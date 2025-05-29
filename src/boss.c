@@ -5,14 +5,17 @@
 #include <stdio.h>
 #include <math.h>
 
+void DrawDebuffStatus(Player* player);
+
 void boss_init(Boss *boss) {
     // 调整初始位置到偏左侧
-    boss->position = (Vector2){1000, screenHeight - 400};
+    boss->position = (Vector2){5000, screenHeight - 400};
     boss->hitbox = (Rectangle){boss->position.x - 350, boss->position.y - 350, 700, 700};
        
+    // 动画相关初始化
     boss->currentFrame = 0;
     boss->frameCounter = 0;
-    boss->frameSpeed = 0.1f;
+    boss->frameSpeed = 0.3f;  // 将动画速度从0.1f改为0.2f，使动画更慢
     boss->isAttacking = false;
     boss->facingLeft = false;
     boss->attackTimer = 0;
@@ -40,7 +43,8 @@ void boss_init(Boss *boss) {
     }
     boss->dataWaveTimer = 0;
     boss->canUseDataWave = true;
-    boss->phase1HealthThreshold = BOSS_HEALTH * 0.5f;  // 50%血量為第一階段
+    boss->phase1HealthThreshold = BOSS_HEALTH * 0.5f;  // 50%血量进入第二阶段
+
     
     // 初始化無人機相關屬性
     boss->dronesActive = false;
@@ -66,10 +70,33 @@ void boss_init(Boss *boss) {
     boss->shieldExplosionActive = false;
     boss->shieldExplosionRadius = 0.0f;
     boss->shieldExplosionPosition = (Vector2){0, 0};
+    boss->isActive = false;  // 初始化時boss未激活
 }
 
-void boss_update(Boss *boss, Player *player) {
+void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
     if (boss->isDead) return;
+
+    // 更新动画帧
+    boss->frameCounter += GetFrameTime();
+    if (boss->frameCounter >= boss->frameSpeed) {
+        boss->frameCounter = 0;
+        boss->currentFrame = (boss->currentFrame + 1) % 5;  // 5帧动画循环
+    }
+
+    if (!boss->isActive) {
+        float dx = boss->position.x - player->position.x;
+        float dy = boss->position.y - player->position.y;
+        float distance = sqrt(dx * dx + dy * dy);
+        
+        if (distance <= BOSS_ACTIVATION_RANGE) {
+            boss->isActive = true;
+
+        }
+        return;
+    }
+    
+    // 持续更新boss房背景音乐
+    UpdateMusicStream(sounds->bossMusic);
 
     // 更新防護罩狀態
     if (boss->shieldActive) {
@@ -138,8 +165,8 @@ void boss_update(Boss *boss, Player *player) {
     
     // 如果不在攻擊範圍內，移動boss
     if (fabs(dx) > attackTriggerDistance && !boss->isAttacking && !boss->shieldActive && !boss->shieldExplosionActive && !boss->energyPulseActive) {
-        float baseSpeed = 100.0f * GetFrameTime();  // 基礎移動速度
-        float moveSpeed = boss->isPhase2 ? baseSpeed * 1.5f : baseSpeed;  // 第二階段提高50%速度
+        float baseSpeed = 75.0f * GetFrameTime();  // 基礎移動速度
+        float moveSpeed = boss->isPhase2 ? baseSpeed * 1.4f : baseSpeed;  // 第二階段提高50%速度
         
         if (boss->facingLeft) {
             boss->position.x -= moveSpeed;
@@ -162,6 +189,15 @@ void boss_update(Boss *boss, Player *player) {
     }
     boss->hitbox.y = boss->position.y - 300;
 
+    // 更新攻击状态
+    if (boss->isAttacking) {
+        boss->attackTimer += GetFrameTime();
+        if (boss->attackTimer >= BOSS_ATTACK_DURATION) {
+            boss->isAttacking = false;  // 攻击结束后切换回移动状态
+            boss->attackTimer = 0;
+        }
+    }
+
     // 攻击逻辑
     if (boss->isAttacking) {
         boss->frameCounter += GetFrameTime();
@@ -175,17 +211,17 @@ void boss_update(Boss *boss, Player *player) {
                 float attackHeight = 200;
                 
                 if (boss->facingLeft) {
-                    attackWidth = 400;
+                    attackWidth = 600;
                     attackArea = (Rectangle){
-                        boss->position.x - attackWidth - 100,
+                        boss->position.x - attackWidth - 150,
                         boss->position.y - attackHeight/2,
                         attackWidth,
                         attackHeight
                     };
                 } else {
-                    attackWidth = 200;  // 朝右時更小的攻擊範圍
+                    attackWidth = 300;  // 朝右時更小的攻擊範圍
                     attackArea = (Rectangle){
-                        boss->position.x + 100,
+                        boss->position.x + 200,
                         boss->position.y - attackHeight/2,
                         attackWidth,
                         attackHeight
@@ -193,7 +229,9 @@ void boss_update(Boss *boss, Player *player) {
                 }
                 
                 if (CheckCollisionRecs(attackArea, player->hitbox)) {
-                    player->hp -= boss->attackDamage;
+                    if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
+                        player->hp -= boss->attackDamage;
+                    }
                 }
                 
                 if (IsKeyDown(KEY_TAB)) {
@@ -306,12 +344,16 @@ void boss_update(Boss *boss, Player *player) {
                     DATA_WAVE_RADIUS,
                     player->hitbox
                 )) {
+                    if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
+                        player->hp -= boss->attackDamage;  // 使用相同的攻擊傷害
+                    
                     player->controlsReversed = true;
                     player->controlReverseTimer = DATA_WAVE_DURATION;
                     // 立即反轉移動方向
                     player->velocity.x = -player->velocity.x;
                     player->velocity.y = -player->velocity.y;
                     boss->dataWaves[i].active = false;
+                    }
                 }
 
                 // 檢查是否超出屏幕
@@ -509,13 +551,19 @@ void boss_update(Boss *boss, Player *player) {
             float dy = player->position.y - boss->energyPulsePosition.y;
             float distanceToPlayer = sqrtf(dx * dx + dy * dy);
             
-            if (distanceToPlayer <= boss->energyPulseRadius) {
-                // 只在debuff結束時才重新施加效果
-                if (player->debuffTimer <= 0) {
-                    // 降低玩家攻擊力和移動速度
-                    player->damage = player->originalDamage * 0.5f;  // 降低50%攻擊力
-                    player->speed = player->originalSpeed * 0.5f;   // 降低50%移動速度
-                    player->debuffTimer = ENERGY_PULSE_DURATION;
+            // 根據boss朝向調整碰撞檢測位置
+            float collisionOffset = boss->facingLeft ? -300 : +450;  // 與繪製位置保持一致
+            float adjustedDx = player->position.x - (boss->energyPulsePosition.x + collisionOffset);
+            float adjustedDistanceToPlayer = sqrtf(adjustedDx * adjustedDx + dy * dy);
+            
+            if (adjustedDistanceToPlayer <= boss->energyPulseRadius) {
+                if (!player->invincible) {  // 只有在非無敵狀態下才施加debuff
+                    // 只在debuff結束時才重新施加效果
+                    if (player->weakenTimer <= 0) {
+                        player->damage = player->originalDamage * 0.5f;
+                        player->speed = 150;
+                        player->weakenTimer = ENERGY_PULSE_DURATION;
+                    }
                 }
             }
             
@@ -525,6 +573,18 @@ void boss_update(Boss *boss, Player *player) {
             }
         }
     }
+
+    // 更新武器禁用計時器
+    if (player->weaponDisabled) {
+        player->weaponDisableTimer -= GetFrameTime();
+        if (player->weaponDisableTimer <= 0) {
+            player->weaponDisabled = false;
+            player->weaponDisableTimer = 0;
+        }
+    }
+
+    // 在更新boss邏輯後顯示debuff狀態
+    DrawDebuffStatus(player);
 }
 
 void boss_draw(Boss *boss, GameTextures *textures) {
@@ -532,25 +592,34 @@ void boss_draw(Boss *boss, GameTextures *textures) {
     
     // 根據狀態選擇要繪製的紋理
     Texture2D currentTexture;
+    Rectangle dest;
     if (boss->isAttacking) {
         // 使用攻擊動畫幀
         currentTexture = textures->bossAttack[boss->currentFrame % 2];  // 確保只使用前兩幀
+        dest = (Rectangle){boss->position.x, boss->position.y, (float)currentTexture.width, (float)currentTexture.height};
     } else {
         // 使用移動圖片
-        currentTexture = textures->boss;
+        if (boss->isPhase2) {
+            currentTexture = textures->bossMovePhase2[boss->currentFrame % 5];  // 使用5帧动画
+        } else {
+            currentTexture = textures->bossMovePhase1[boss->currentFrame % 5];  // 使用5帧动画
+        }
+        // 根据朝向调整偏移
+        float offset = boss->facingLeft ? -100 : 100;
+        dest = (Rectangle){boss->position.x + offset, boss->position.y, (float)currentTexture.width, (float)currentTexture.height};
     }
-
-    // 設置繪製參數
+    
+    // 设置繪製參數
     Rectangle source = {0, 0, (float)currentTexture.width, (float)currentTexture.height};
-    Rectangle dest = {boss->position.x, boss->position.y, (float)currentTexture.width, (float)currentTexture.height};
     Vector2 origin = {currentTexture.width / 2, currentTexture.height / 2};
 
-    // 根據朝向翻轉圖片 - 修改這裡: 當facingLeft為true時不翻轉
+    // 根據朝向翻轉圖片
     if (!boss->facingLeft) {
         source.width = -source.width;
     }
 
     DrawTexturePro(currentTexture, source, dest, origin, 0, WHITE);
+    
     // DEBUG: 显示攻击范围和碰撞箱
     if (IsKeyDown(KEY_TAB)) {
         // 显示攻击范围
@@ -627,14 +696,14 @@ void boss_draw(Boss *boss, GameTextures *textures) {
     // 繪製能量脈衝效果
     if (boss->energyPulseActive) {
         // 繪製能量脈衝效果
-        Rectangle source = { 0, 0, 296, 79 };  // 使用新的圖片尺寸
+        Rectangle source = { 0, 0, 782, 182 };  // 更新為新的圖片尺寸
         Rectangle dest = {
             boss->facingLeft ? 
-                boss->energyPulsePosition.x - 248 :  // 朝左時的偏移
-                boss->energyPulsePosition.x - 50,   // 朝右時的偏移
+                boss->energyPulsePosition.x - 600 :  // 朝左時的偏移調整為600
+                boss->energyPulsePosition.x - 50,   // 朝右時的偏移保持不變
             boss->energyPulsePosition.y + 100,   // 調低位置
-            296,  // 寬度
-            79    // 高度
+            782,  // 更新寬度
+            182   // 更新高度
         };
         Vector2 origin = { 0, 0 };
 
@@ -656,18 +725,8 @@ void boss_draw(Boss *boss, GameTextures *textures) {
             (Color){0, 255, 255, 100},
             (Color){0, 255, 255, 0}
         );
-
-        // 在右上角顯示吸收的傷害值
-        char damageText[32];
-        sprintf(damageText, "吸收傷害: %.0f", boss->absorbedDamage);
-        DrawText(
-            damageText,
-            GetScreenWidth() - 200,  // 距離右邊200像素
-            50,                      // 距離頂部50像素
-            20,
-            WHITE
-        );
     }
+
 
     // 繪製爆炸效果
     if (boss->shieldExplosionActive) {
@@ -741,9 +800,11 @@ void boss_updateDroneBullet(BossDroneBullet *bullet, float deltaTime) {
 
 // 检查子弹是否击中玩家
 void boss_checkDroneBulletHit(BossDroneBullet *bullet, Player *player) {
-    if (!bullet->active || player->invincible) return;
+    if (player->invincible) return;  // 如果玩家處於無敵狀態，直接返回
     
-    if (CheckCollisionCircleRec(bullet->position, BOSS_DRONE_BULLET_RADIUS, player->hitbox)) {
+    if (!bullet->active) return;
+    
+    if (CheckCollisionCircleRec(bullet->position, BOSS_DRONE_BULLET_RADIUS, player->hitbox)&& !player->invincible) {
         player->hp -= BOSS_DRONE_DAMAGE;
         // 禁用武器2秒
         player->weaponDisabled = true;
@@ -759,5 +820,9 @@ void boss_takeDamage(Boss *boss, float damage) {
     } else {
         boss->health -= damage;
     }
+}
+
+void DrawDebuffStatus(Player* player) {
+
 }
 

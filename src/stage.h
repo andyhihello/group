@@ -13,8 +13,10 @@ void stage_drawhitbox();
 
 void stage2_init(Texture2D *backgrounds);
 void stage2_draw(Texture2D *backgrounds);
-void stage2_update(Player *player, Boss *boss);
+void stage2_update(Boss *boss, Player *player, GameSounds *sounds);
 void stage_drawgridlines();
 void stage_saveCompletionTime(float completeTime);
 void stage_displayTopCompletionTimes();
+
+void stage4_draw(Texture2D background);
 #endif
