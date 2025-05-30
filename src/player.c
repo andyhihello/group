@@ -44,6 +44,7 @@ void player_init(Player *player){
     player->originalSpeed = 300.0f;        // 保存原始移動速度
     player->debuffTimer = 0;
     player->tutorial = 0;                     // 教學進度
+    player->hurtTimer = 0.0;
 
     // 子彈與移動相關設定
     player->reloadtime = 3;                   // 換彈所需時間（秒）
@@ -201,6 +202,13 @@ void player_update(Player *player, float deltaTime) {
             player->coin --;
         }
         else upgradeFailTimer = upgradeFailDuration;
+
+        
+    }
+
+    if (player->hurtTimer > 0.0f) {
+        player->hurtTimer -= deltaTime;
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
     }
 
     // 更新 debuff 計時器
@@ -567,7 +575,16 @@ void player_draw(Player *player, GameTextures *textures) {
         source.width = -source.width;
     }
 
-    DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
+      // 受傷時變紅（閃爍版）
+    Color playerTint = WHITE;
+    if (player->hurtTimer > 0.0f) {
+        // 閃爍效果（每0.05秒切換紅/白）
+        if (((int)(player->hurtTimer * 20) % 2) == 0) {
+            playerTint = (Color){255, 60, 60, 255}; // 紅色Tint
+        }
+    }
+    
+    DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
 
     if (player->invincible) {
         Rectangle dest = {

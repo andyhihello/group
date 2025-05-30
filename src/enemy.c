@@ -140,7 +140,7 @@ void enemy_laserDamagePlayer(Drone *drone, Player *player,GameSounds *sounds) {
     if (drone->laser.active == false||player->invincible == true) return;
     if (CheckCollisionRecs(drone->laserhitbox, player->hitbox) ) {
         player->hp -= drone->laser.damage;
-        
+        player->hurtTimer = 0.1f;
     }
 }
 
@@ -153,6 +153,7 @@ void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* sol
     if (CheckCollisionCircleRec(bullet->position, bulletRadius, player->hitbox)) {
         float damage = enemy_calculateDistanceBasedDamage(bullet, player, soldier);
         player->hp -= damage;
+        player->hurtTimer = 0.1f;
         bullet->active = false;  // 子彈命中後消失
     }
 }

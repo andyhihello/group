@@ -116,6 +116,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
             if (distance <= BOSS_SHIELD_EXPLOSION_RADIUS) {
                 float damage = boss->absorbedDamage * BOSS_SHIELD_DAMAGE_RATIO;
                 player->hp -= damage;
+                player->hurtTimer = 0.1f;
             }
             
             boss->absorbedDamage = 0.0f;
@@ -231,6 +232,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                 if (CheckCollisionRecs(attackArea, player->hitbox)) {
                     if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
                         player->hp -= boss->attackDamage;
+                        player->hurtTimer = 0.1f;
                     }
                 }
                 
@@ -346,6 +348,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                 )) {
                     if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
                         player->hp -= boss->attackDamage;  // 使用相同的攻擊傷害
+                        player->hurtTimer = 0.1f;
                     
                     player->controlsReversed = true;
                     player->controlReverseTimer = DATA_WAVE_DURATION;
@@ -806,6 +809,7 @@ void boss_checkDroneBulletHit(BossDroneBullet *bullet, Player *player) {
     
     if (CheckCollisionCircleRec(bullet->position, BOSS_DRONE_BULLET_RADIUS, player->hitbox)&& !player->invincible) {
         player->hp -= BOSS_DRONE_DAMAGE;
+        player->hurtTimer = 0.1f;
         // 禁用武器2秒
         player->weaponDisabled = true;
         player->weaponDisableTimer = WEAPON_DISABLE_TIME;
