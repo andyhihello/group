@@ -31,7 +31,6 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
         textures->bossAttack[i] = LoadTexture(path);
     }
     
-    textures->bossShield = LoadTexture("resources/boss_shield.png");
     textures->bossLight = LoadTexture("resource/boss/stage 2 light.png");
 
     // Drone

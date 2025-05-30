@@ -178,15 +178,7 @@ int main() {
                 stage_displayTopCompletionTimes();
                 player_update(&player, GetFrameTime());
                 
-                
-                if(debug) {
-                    player_drawhitbox(&player);
-                    stage_drawhitbox();
-                }
             }
-
-            
-
 
             if(player.dead){
                 if(!deadsound) {
@@ -205,8 +197,6 @@ int main() {
                     savingdata = true;
                 }
             }
-
-
         } 
         
             

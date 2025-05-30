@@ -25,7 +25,7 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    
+    memset(player, 0, sizeof(Player));    
     // 基本屬性初始化
     player->stage = 1;
     player->stageChanged = true;  // 初始化stageChanged
