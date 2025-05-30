@@ -11,7 +11,7 @@
 #define BOSS_ATTACK_FRAME_COUNT 6  // 实际帧数为6（1,3,5,7,9,11）
 #define BOSS_ATTACK_RANGE 150.0f  // Boss攻击范围
 #define BOSS_ATTACK_COOLDOWN 2.0f
-#define BOSS_HEALTH 1000
+#define BOSS_HEALTH 100
 #define BOSS_ATTACK_DAMAGE 5
 #define BOSS_PHASE1_THRESHOLD_DRONE 0.8f  // 新增：80%血量閾值
 #define MAX_DATA_WAVES 3

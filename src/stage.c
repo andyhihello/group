@@ -151,7 +151,3 @@ void stage_displayTopCompletionTimes() {
     }
 }
 
-void stage4_draw(Texture2D background) {
-    DrawTexture(background, 0, 0, WHITE);
-    // 添加stage4的其他绘制逻辑
-} 

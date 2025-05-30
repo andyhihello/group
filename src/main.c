@@ -167,14 +167,17 @@ int main() {
             }
             else if (player.stage == 4) {
                 if (player.stageChanged) {  // 当stage刚改变时
-                    player.position = (Vector2){ 100, 400 };  // 设置stage4的初始位置
+                    player.position = (Vector2){ 300, 400 };  // 设置stage4的初始位置
                     player.stageChanged = false;
                 }
-                
-                stage4_draw(textures.stage4Background);
+                camX = player.position.x;
+                //使背景不跑出畫面
+                if (camX < halfScreen) camX = halfScreen;
+                if (camX > 3000 * 0.7f-60) camX = 3000 * 0.7f-60;
+                camera.target = (Vector2){ camX, screenHeight / 2.0f  };
+                stage_displayTopCompletionTimes();
                 player_update(&player, GetFrameTime());
-                player_draw(&player, &textures);
-                player_drawbullet(&player, camera, &textures);
+                
                 
                 if(debug) {
                     player_drawhitbox(&player);
@@ -200,10 +203,6 @@ int main() {
                     double completeTime = GetTime() - startTime;
                     stage_saveCompletionTime(completeTime);
                     savingdata = true;
-                }
-                if(IsKeyPressed(KEY_SPACE)){
-                    currentGameState = MENU;
-                    Isinit = false;
                 }
             }
 
@@ -267,15 +266,15 @@ int main() {
                         }
                     }
                 }
+            }
+            else if (player.stage == 4){
+                DrawTexture(textures.stage4Background, 0, 0, WHITE);
+                player_draw(&player, &textures);
                 
-                // 检查Boss是否死亡
-                if (boss.isDead) {
-                    stage_displayTopCompletionTimes();
-                }
             }
             EndMode2D();
- 
-            if(!player.dead)player_UI(&player);    
+            if(player.stage == 4);
+            else if(!player.dead)player_UI(&player);    
             else player_deadUI(&player);           
             if(player.tutorial){
                 stage_drawtutorial(&player);

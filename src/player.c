@@ -179,7 +179,8 @@ void player_update(Player *player, float deltaTime) {
 
     // 限制不能超出地圖
     if (player->position.x < -50) player->position.x = -50;
-    if (player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
+    if (player->stage == 1 && player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
+    if (player->stage == 4 && player->position.x > 3000 - playerWidth) player->position.x = 3000 - playerWidth;
 
     // 更新碰撞矩形
     player_hitbox(player);

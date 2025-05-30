@@ -18,5 +18,4 @@ void stage_drawgridlines();
 void stage_saveCompletionTime(float completeTime);
 void stage_displayTopCompletionTimes();
 
-void stage4_draw(Texture2D background);
 #endif

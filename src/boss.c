@@ -9,7 +9,7 @@ void DrawDebuffStatus(Player* player);
 
 void boss_init(Boss *boss) {
     // 调整初始位置到偏左侧
-    boss->position = (Vector2){5000, screenHeight - 400};
+    boss->position = (Vector2){1000, screenHeight - 400};
     boss->hitbox = (Rectangle){boss->position.x - 350, boss->position.y - 350, 700, 700};
        
     // 动画相关初始化
