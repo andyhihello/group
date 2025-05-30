@@ -6,7 +6,7 @@
 
 // 生成随机字符串
 void hack_generate_new_string(HackScene *scene) {
-    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     scene->stringLength = 4;  // 修改為4個字符
     scene->inputString[0] = '\0';  // 清空輸入字符串
     

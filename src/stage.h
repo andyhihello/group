@@ -17,5 +17,5 @@ void stage2_update(Boss *boss, Player *player, GameSounds *sounds);
 void stage_drawgridlines();
 void stage_saveCompletionTime(float completeTime);
 void stage_displayTopCompletionTimes();
-
+void stage_exitdoor(Player *player,GameState *currentGameState,bool *Isinit);
 #endif

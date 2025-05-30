@@ -27,7 +27,7 @@ int main() {
     Player player;
     Boss boss;
     Drone drone[MAX_DRONES];
-    Soldier soldier;
+    Soldier soldier[MAX_SOLDIERS];
     HackScene hackScene;
     Camera2D camera = { 0 };
     
@@ -70,7 +70,10 @@ int main() {
                     enemy_initDrone(&drone[i]);
                     drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
                 }
-                enemy_initSoldier(&soldier);
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    enemy_initSoldier(&soldier[i]);
+                    soldier[i].position = (Vector2){ 3500 + i * 1500, 400 }; // 舉例
+                }
                 boss_init(&boss);
                 hack_init(&hackScene);
 
@@ -97,11 +100,7 @@ int main() {
 
             if (player.stage == 1 && !player.dead){
                 player_update(&player, deltaTime);  
-                for (int i = 0; i < MAX_DRONES; i++) {
-                    enemy_updateDrone(&drone[i], &player, deltaTime); 
-                }  
-                
-                enemy_updateSoldier(&soldier, &player, deltaTime); 
+            
                 camX = player.position.x;
                 //使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
@@ -112,9 +111,22 @@ int main() {
                 stage_door(&player,&sounds);
 
                 for (int i = 0; i < MAX_DRONES; i++) {
+                    enemy_updateDrone(&drone[i], &player, deltaTime); 
                     enemy_laserDamagePlayer(&drone[i], &player,&sounds);
                     enemy_bulletDamageDrone(&player, &drone[i],&sounds); 
                 } 
+
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    if (soldier[i].active){
+                    enemy_updateSoldier(&soldier[i], &player, deltaTime);
+                    enemy_bulletDamageSoldier(&player, &soldier[i], &sounds);
+                    
+
+                    for (int j = 0; j < 3; j++)
+                        enemy_bulletDamagePlayer(&soldier[i].bullets[j], &player, &soldier[i]);
+                    }
+                }
+
                 
                 if(player.tutorial){
                     if (IsKeyPressed(KEY_SPACE)) {
@@ -175,7 +187,8 @@ int main() {
                 if (camX < halfScreen) camX = halfScreen;
                 if (camX > 3000 * 0.7f-60) camX = 3000 * 0.7f-60;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
-                stage_displayTopCompletionTimes();
+                
+                stage_exitdoor(&player,&currentGameState,&Isinit);
                 player_update(&player, GetFrameTime());
                 
             }
@@ -221,6 +234,11 @@ int main() {
                     enemy_drawDrone(&drone[i], &textures);
                     enemy_drawLaser(&drone[i], &textures);      
                 }
+
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    enemy_drawSoldier(&soldier[i], &textures);
+                    enemy_drawSoldierBullets(&soldier[i], &textures);
+                }
                 
                 player_drawbullet(&player,camera,&textures);
                 
@@ -228,9 +246,16 @@ int main() {
                     player_drawhitbox(&player);
                     stage_drawhitbox();
                     for (int i = 0; i < MAX_DRONES; i++) {
-                        enemy_hitbox(&drone[i]);
+                        enemy_hitbox(&drone[i], NULL, &textures); // 只畫 Drone
                     }
+                    for (int i = 0; i < MAX_SOLDIERS; i++) {
+                        enemy_hitbox(NULL, &soldier[i], &textures); // 只畫 Soldier
+                    }
+
+                    
                 }
+
+                
                       
             }
             else if (player.stage == 2) {
@@ -259,6 +284,9 @@ int main() {
             }
             else if (player.stage == 4){
                 DrawTexture(textures.stage4Background, 0, 0, WHITE);
+                DrawText("Congratulation! You stop the Neural Override Project", 550, 300, 32, WHITE);
+                DrawText("Thank you for playing!", 680, 400, 50, WHITE);
+                stage_displayTopCompletionTimes();
                 player_draw(&player, &textures);
                 
             }
@@ -269,17 +297,15 @@ int main() {
             if(player.tutorial){
                 stage_drawtutorial(&player);
             }
-            if(debug){
-                
-            }
+            
         } 
         else if (currentGameState == SETTINGS) {
             drawSettings(&textures);
         }
-        //stage_drawgridlines(); // 修正圖片用網格
+        
         EndDrawing();
     }
-
+    //stage_drawgridlines(); // 修正圖片用網格
     // 釋放資源並關閉  
     unloadGameTextures(&textures,&sounds);
 

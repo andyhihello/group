@@ -48,6 +48,12 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     }
     textures->droneLaser = LoadTexture("resource/drone/laser.png");
 
+    //soldier
+
+    textures->soldierstagebullet = LoadTexture("resource/soldier/stagebullet.png");
+    textures->soldierbossbullet = LoadTexture("resource/soldier/bossbullet.png");
+    textures->soldiertexture = LoadTexture("resource/soldier/soldier.png");
+
     // Stage
     for (int i = 0; i < 5; i++) {
         sprintf(path, "resource/scene/1-%d.png", i + 1);
@@ -88,7 +94,6 @@ void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
         UnloadTexture(textures->bossAttack[i]);
     }
     
-    UnloadTexture(textures->bossShield);
     UnloadTexture(textures->bossLight);
 
     for (int i = 0; i < 5; i++) UnloadTexture(textures->dronePatrol[i]);

@@ -97,11 +97,11 @@ void stage2_update(Boss *boss, Player *player, GameSounds *sounds) {
 }
 
 void stage_drawgridlines() {
-    int gridSize = 20;
+    int gridSize = 1000;
     Color lineColor = Fade(GRAY, 0.5f);  // 半透明灰色
 
-    for (int x = 0; x <= screenWidth; x += gridSize) {
-        DrawLine(x, 0, x, screenHeight, lineColor);
+    for (int x = 0; x <= stage1Width; x += gridSize) {
+        DrawLine(x, 0, x, stage1Width, lineColor);
     }
 
     for (int y = 0; y <= screenHeight; y += gridSize) {
@@ -143,11 +143,18 @@ void stage_displayTopCompletionTimes() {
     }
 
     // 顯示前 5 名
-    DrawText("Top 5 Completion Times:", 100, 100, 30, GOLD);
+    DrawText("Top 5 Completion Times:", 1500, 120, 50, GOLD);
     for (int i = 0; i < count && i < 5; i++) {
         char buffer[64];
         sprintf(buffer, "%d. %.2f seconds", i + 1, times[i]);
-        DrawText(buffer, 1000, 140 + i * 30, 25, WHITE);
+        DrawText(buffer, 1520, 220 + i * 80, 70, WHITE);
     }
 }
 
+void stage_exitdoor(Player *player,GameState *currentGameState,bool *Isinit){
+    Rectangle exitdoor = { 2500, 300, 400, 700 };
+    if(CheckCollisionRecs(player->hitbox, exitdoor) && IsKeyPressed(KEY_SPACE)){
+        *currentGameState = MENU;
+        *Isinit = false;
+    }
+}

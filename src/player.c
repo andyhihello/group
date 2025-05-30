@@ -29,8 +29,8 @@ void player_init(Player *player){
     // 基本屬性初始化
     player->stage = 1;
     player->stageChanged = true;  // 初始化stageChanged
-    player->position = (Vector2){14300, 300};   // 起始位置
-    player->hp = 100;                         // 初始血量
+    player->position = (Vector2){300, 300};   // 起始位置
+    player->hp = 10000;                         // 初始血量
     player->coin = 100;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
@@ -640,6 +640,17 @@ void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSou
             player->position = (Vector2){300, 300}; // 重生點
             player->dead = false;
             *deadsound = false;
+            player->velocityY = 0;
+            player->isJumping = false;
+            player->invincible = false;
+            player->invincibleTimeLeft = 0;
+            player->invincibleCooldownLeft = 0;
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+            player->debuffTimer = 0;
+            player->weakenTimer = 0;
         }
         else{
             *currentGameState = MENU;

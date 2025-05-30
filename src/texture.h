@@ -25,6 +25,12 @@ typedef struct {
     Texture2D droneAttack[4];
     Texture2D droneLaser;
 
+    // soldier textures
+
+    Texture2D soldierstagebullet;
+    Texture2D soldierbossbullet;
+    Texture2D soldiertexture;
+
     // Background textures
     Texture2D stage1Background[5];
     Texture2D stage2Background[2];

@@ -6,16 +6,14 @@
 // 音量數值 (0.0f ~ 1.0f)
 float bgmVolume = 0.5f;
 float sfxVolume = 0.5f;
-float uiVolume  = 0.5f;
 
 // 每條滑桿的位置與寬度
-#define SLIDER_WIDTH 300
-#define SLIDER_HEIGHT 20
-#define SLIDER_X 500
+#define SLIDER_WIDTH 400
+#define SLIDER_HEIGHT 40
+#define SLIDER_X 800
 
-static Rectangle bgmSlider = { SLIDER_X, 200, SLIDER_WIDTH, SLIDER_HEIGHT };
-static Rectangle sfxSlider = { SLIDER_X, 300, SLIDER_WIDTH, SLIDER_HEIGHT };
-static Rectangle uiSlider  = { SLIDER_X, 400, SLIDER_WIDTH, SLIDER_HEIGHT };
+static Rectangle bgmSlider = { SLIDER_X, 350, SLIDER_WIDTH, SLIDER_HEIGHT };
+static Rectangle sfxSlider = { SLIDER_X, 450, SLIDER_WIDTH, SLIDER_HEIGHT };
 static Rectangle backButton = { screenWidth / 2 - 100, screenHeight - 100, 200, 50 };
 Color backButtonColor = LIGHTGRAY;
 
@@ -37,10 +35,6 @@ void updateSettings(GameState *currentGameState) {
             sfxVolume = (mouse.x - sfxSlider.x) / SLIDER_WIDTH;
             if (sfxVolume < 0) sfxVolume = 0;
             if (sfxVolume > 1) sfxVolume = 1;
-        } else if (CheckCollisionPointRec(mouse, uiSlider)) {
-            uiVolume = (mouse.x - uiSlider.x) / SLIDER_WIDTH;
-            if (uiVolume < 0) uiVolume = 0;
-            if (uiVolume > 1) uiVolume = 1;
         } else if (CheckCollisionPointRec(mouse, backButton)) {
             *currentGameState = MENU;
         }
@@ -52,19 +46,16 @@ void updateSettings(GameState *currentGameState) {
 void drawSettings(GameTextures *textures) {
 
     DrawTexture(textures->settingBackground, 0, 0, WHITE);//背景圖片
-    DrawText("Settings - Adjust Volume", 480, 100, 30, WHITE);
+    DrawText("Settings - Adjust Volume", 420, 150, 60, WHITE);
 
-    DrawText("BGM Volume", SLIDER_X - 200, 200, 20, WHITE);
+    DrawText("BGM Volume", 400, 350, 50, WHITE);
     DrawRectangleRec(bgmSlider, GRAY);
-    DrawRectangle(SLIDER_X, 200, bgmVolume * SLIDER_WIDTH, SLIDER_HEIGHT, GREEN);
+    DrawRectangle(SLIDER_X, 350, bgmVolume * SLIDER_WIDTH, SLIDER_HEIGHT, GREEN);
 
-    DrawText("SFX Volume", SLIDER_X - 200, 300, 20, WHITE);
+    DrawText("SFX Volume", 400, 450, 50, WHITE);
     DrawRectangleRec(sfxSlider, GRAY);
-    DrawRectangle(SLIDER_X, 300, sfxVolume * SLIDER_WIDTH, SLIDER_HEIGHT, GREEN);
+    DrawRectangle(SLIDER_X, 450, sfxVolume * SLIDER_WIDTH, SLIDER_HEIGHT, GREEN);
 
-    DrawText("UI Volume", SLIDER_X - 200, 400, 20, WHITE);
-    DrawRectangleRec(uiSlider, GRAY);
-    DrawRectangle(SLIDER_X, 400, uiVolume * SLIDER_WIDTH, SLIDER_HEIGHT, GREEN);
 
     // 畫按鈕背景
     
