@@ -4,11 +4,16 @@
 
 void stage_drawtutorial(Player *player) {
     // 背景遮罩
+    // 背景遮罩
     int boxWidth = 1200;
+    int boxHeight = 350;
     int boxHeight = 350;
     int boxX = 200;
     int boxY = 120;
+    int boxY = 120;
 
+    DrawRectangle(boxX, boxY, boxWidth, boxHeight, Fade(BLACK, 0.95f));
+    DrawText("GAME TUTORIAL", boxX + boxWidth / 2 - MeasureText("GAME TUTORIAL", 40) / 2, boxY + 20, 40, WHITE);
     DrawRectangle(boxX, boxY, boxWidth, boxHeight, Fade(BLACK, 0.95f));
     DrawText("GAME TUTORIAL", boxX + boxWidth / 2 - MeasureText("GAME TUTORIAL", 40) / 2, boxY + 20, 40, WHITE);
 
@@ -44,7 +49,9 @@ void stage_drawtutorial(Player *player) {
     }
 
     // 指示文字
+    // 指示文字
     const char *continueText = "Press [SPACE] to continue...";
+    DrawText(continueText, boxX + boxWidth - MeasureText(continueText, 25) - 20, boxY + boxHeight - 30, 25, GREEN);
     DrawText(continueText, boxX + boxWidth - MeasureText(continueText, 25) - 20, boxY + boxHeight - 30, 25, GREEN);
 }
 
