@@ -609,16 +609,6 @@ void player_draw(Player *player, GameTextures *textures) {
     }
     
     DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
-      // 受傷時變紅（閃爍版）
-    Color playerTint = WHITE;
-    if (player->hurtTimer > 0.0f) {
-        // 閃爍效果（每0.05秒切換紅/白）
-        if (((int)(player->hurtTimer * 20) % 2) == 0) {
-            playerTint = (Color){255, 60, 60, 255}; // 紅色Tint
-        }
-    }
-    
-    DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
 
     if (player->invincible) {
         Rectangle dest = {
