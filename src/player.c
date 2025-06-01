@@ -26,6 +26,7 @@ void player_hitbox(Player *player) {
 
 void player_init(Player *player){
     memset(player, 0, sizeof(Player));    
+    memset(player, 0, sizeof(Player));    
     // 基本屬性初始化
     player->stage = 1;
     player->stageChanged = true;  // 初始化stageChanged
@@ -44,6 +45,7 @@ void player_init(Player *player){
     player->originalSpeed = 300.0f;        // 保存原始移動速度
     player->debuffTimer = 0;
     player->tutorial = 0;                     // 教學進度
+    player->hurtTimer = 0.0;
     player->hurtTimer = 0.0;
 
     // 子彈與移動相關設定
@@ -202,6 +204,13 @@ void player_update(Player *player, float deltaTime) {
             player->coin --;
         }
         else upgradeFailTimer = upgradeFailDuration;
+
+        
+    }
+
+    if (player->hurtTimer > 0.0f) {
+        player->hurtTimer -= deltaTime;
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
 
         
     }
@@ -600,6 +609,16 @@ void player_draw(Player *player, GameTextures *textures) {
     }
     
     DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
+      // 受傷時變紅（閃爍版）
+    Color playerTint = WHITE;
+    if (player->hurtTimer > 0.0f) {
+        // 閃爍效果（每0.05秒切換紅/白）
+        if (((int)(player->hurtTimer * 20) % 2) == 0) {
+            playerTint = (Color){255, 60, 60, 255}; // 紅色Tint
+        }
+    }
+    
+    DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
 
     if (player->invincible) {
         Rectangle dest = {
@@ -672,6 +691,17 @@ void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSou
             player->position = (Vector2){300, 300}; // 重生點
             player->dead = false;
             *deadsound = false;
+            player->velocityY = 0;
+            player->isJumping = false;
+            player->invincible = false;
+            player->invincibleTimeLeft = 0;
+            player->invincibleCooldownLeft = 0;
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+            player->debuffTimer = 0;
+            player->weakenTimer = 0;
             player->velocityY = 0;
             player->isJumping = false;
             player->invincible = false;
