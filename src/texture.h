@@ -36,8 +36,8 @@ typedef struct {
     Texture2D stage2Background[2];
     Texture2D menuBackground;
     Texture2D settingBackground;
-    Texture2D stage4Background;  // 添加stage4背景
-    Texture2D dataWaveTexture;  // 新增數據波動畫紋理
+    Texture2D stage4Background;  
+    Texture2D dataWaveTexture;  
 } GameTextures;
 
 typedef struct {
@@ -50,8 +50,8 @@ typedef struct {
     Sound playerdied;
     Sound enterbossstage;
     Sound win;
-    Music bossMusic;        // Boss房间背景音乐
-    Sound bossShieldSound;  // Boss护盾音效
+    Music bossMusic;       
+    Sound bossShieldSound;  
 } GameSounds;
 
 void loadGameTextures(GameTextures *textures, GameSounds *sounds);

@@ -68,11 +68,11 @@ int main() {
                 player_init(&player);
                 for (int i = 0; i < MAX_DRONES; i++) {
                     enemy_initDrone(&drone[i]);
-                    drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
+                    drone[i].position = (Vector2){2000 + i * 2000, 200};  
                 }
                 for (int i = 0; i < MAX_SOLDIERS; i++) {
                     enemy_initSoldier(&soldier[i]);
-                    soldier[i].position = (Vector2){ 3500 + i * 1500, 400 }; // 舉例
+                    soldier[i].position = (Vector2){ 3500 + i * 1500, 400 };
                 }
                 boss_init(&boss);
                 hack_init(&hackScene);
