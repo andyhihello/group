@@ -307,7 +307,7 @@ int main() {
             }
             EndMode2D();
             if(player.stage == 4);
-            else if(!player.dead)player_UI(&player);    
+            else if(!player.dead)/*player_UI(&player)*/;    
             else player_deadUI(&player);           
             if(player.tutorial){
                 stage_drawtutorial(&player);

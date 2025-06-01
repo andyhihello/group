@@ -37,7 +37,7 @@ void player_init(Player *player){
     player->invincible = false;               // 是否無敵
     player->invincibleDuration = 2.0f;        // 無敵持續時間
     player->invincibleTimeLeft = 0.0f;        // 無敵剩餘時間
-    player->invincibleCooldown = 15.0f;       // 無敵技能冷卻時間
+    player->invincibleCooldown = 20.0f;       // 無敵技能冷卻時間
     player->invincibleCooldownLeft = 0.0f;    // 無敵剩餘冷卻
     memset(player->bullets, 0, sizeof(player->bullets)); // 清空子彈狀態
     player->originalDamage = player->damage;  // 保存原始值
