@@ -25,12 +25,19 @@ typedef struct {
     Texture2D droneAttack[4];
     Texture2D droneLaser;
 
+    // soldier textures
+
+    Texture2D soldierstagebullet;
+    Texture2D soldierbossbullet;
+    Texture2D soldiertexture;
+
     // Background textures
     Texture2D stage1Background[5];
     Texture2D stage2Background[2];
     Texture2D menuBackground;
     Texture2D settingBackground;
     Texture2D stage4Background;  // 添加stage4背景
+    Texture2D dataWaveTexture;  // 新增數據波動畫紋理
 } GameTextures;
 
 typedef struct {

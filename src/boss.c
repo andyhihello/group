@@ -42,10 +42,10 @@ void boss_init(Boss *boss) {
         boss->dataWaves[i].speed = DATA_WAVE_SPEED;
     }
     boss->dataWaveTimer = 0;
-    boss->canUseDataWave = true;
+    boss->dataWaveStartTimer = 0;  // 初始化計時器
+    boss->canUseDataWave = false;  // 初始化時設為false
     boss->phase1HealthThreshold = BOSS_HEALTH * 0.5f;  // 50%血量进入第二阶段
 
-    
     // 初始化無人機相關屬性
     boss->dronesActive = false;
     boss->droneSpawnTimer = 0;
@@ -116,6 +116,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
             if (distance <= BOSS_SHIELD_EXPLOSION_RADIUS) {
                 float damage = boss->absorbedDamage * BOSS_SHIELD_DAMAGE_RATIO;
                 player->hp -= damage;
+                player->hurtTimer = 0.1f;
             }
             
             boss->absorbedDamage = 0.0f;
@@ -231,6 +232,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                 if (CheckCollisionRecs(attackArea, player->hitbox)) {
                     if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
                         player->hp -= boss->attackDamage;
+                        player->hurtTimer = 0.1f;
                     }
                 }
                 
@@ -302,16 +304,18 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
 
     // 第一階段技能：數據波
     if (boss->health > boss->phase1HealthThreshold) {
-        // 更新數據波冷卻
-        if (!boss->canUseDataWave) {
-            boss->dataWaveTimer -= GetFrameTime();
-            if (boss->dataWaveTimer <= 0) {
+        // 如果boss剛激活，開始計時
+        if (boss->isActive) {
+            boss->dataWaveStartTimer += GetFrameTime();
+            if (boss->dataWaveStartTimer >= 10.0f) {  // 10秒後
                 boss->canUseDataWave = true;
+                boss->dataWaveStartTimer = 0;  // 重置計時器
             }
         }
 
-        // 發射數據波
-        if (boss->canUseDataWave) {
+        // 更新數據波冷卻
+        boss->dataWaveTimer -= GetFrameTime();
+        if (boss->dataWaveTimer <= 0 && boss->canUseDataWave) {  // 只有在canUseDataWave為true時才施放
             for (int i = 0; i < MAX_DATA_WAVES; i++) {
                 if (!boss->dataWaves[i].active) {
                     boss->dataWaves[i].position = boss->position;
@@ -346,6 +350,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                 )) {
                     if (!player->invincible) {  // 只有在非無敵狀態下才造成傷害
                         player->hp -= boss->attackDamage;  // 使用相同的攻擊傷害
+                        player->hurtTimer = 0.1f;
                     
                     player->controlsReversed = true;
                     player->controlReverseTimer = DATA_WAVE_DURATION;
@@ -356,11 +361,12 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                     }
                 }
 
-                // 檢查是否超出屏幕
-                if (boss->dataWaves[i].position.x < -500 || 
-                    boss->dataWaves[i].position.x > screenWidth + 500 ||
-                    boss->dataWaves[i].position.y < -500 || 
-                    boss->dataWaves[i].position.y > screenHeight + 500) {
+                // 檢查是否超出與boss的距離
+                float dx = boss->dataWaves[i].position.x - boss->position.x;
+                float dy = boss->dataWaves[i].position.y - boss->position.y;
+                float distance = sqrtf(dx * dx + dy * dy);
+                
+                if (distance > 1000.0f) {
                     boss->dataWaves[i].active = false;
                 }
             }
@@ -487,10 +493,9 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                     boss->drones[i].attackTimer = 0.0f;
                 }
                 
-                // 更新子弹位置
-                boss_updateDroneBullet(&boss->drones[i].bullet, GetFrameTime());
+                // 更新子弹位置，傳入player參數
+                boss_updateDroneBullet(&boss->drones[i].bullet, GetFrameTime(), player);
                 
-                // 只检查子弹是否击中玩家，忽略与boss的碰撞
                 boss_checkDroneBulletHit(&boss->drones[i].bullet, player);
             }
         }
@@ -587,7 +592,7 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
     DrawDebuffStatus(player);
 }
 
-void boss_draw(Boss *boss, GameTextures *textures) {
+void boss_draw(Boss *boss, GameTextures *textures, Vector2 screenTopLeft, Vector2 screenBottomRight, Player *player) {
     if (boss->isDead) return;
     
     // 根據狀態選擇要繪製的紋理
@@ -670,27 +675,106 @@ void boss_draw(Boss *boss, GameTextures *textures) {
     // 繪製數據波
     for (int i = 0; i < MAX_DATA_WAVES; i++) {
         if (boss->dataWaves[i].active) {
-            DrawCircle(
-                (int)boss->dataWaves[i].position.x,
-                (int)boss->dataWaves[i].position.y,
-                DATA_WAVE_RADIUS,
-                BLUE
-            );
+            // 若在鏡頭內，繪製數據波
+            if (boss->dataWaves[i].position.x >= screenTopLeft.x && 
+                boss->dataWaves[i].position.x <= screenBottomRight.x &&
+                boss->dataWaves[i].position.y >= screenTopLeft.y && 
+                boss->dataWaves[i].position.y <= screenBottomRight.y) {
+
+                // 設定旋轉角度
+                float angle = atan2f(boss->dataWaves[i].direction.y, 
+                                   boss->dataWaves[i].direction.x) * RAD2DEG;
+
+                // 設定貼圖繪製資訊
+                Rectangle source = { 0, 0, (float)textures->soldierbossbullet.width, 
+                                   (float)textures->soldierbossbullet.height };
+                Rectangle dest = {
+                    boss->dataWaves[i].position.x,
+                    boss->dataWaves[i].position.y,
+                    51.0f,
+                    50.0f
+                };
+                Vector2 origin = { 25.5f, 25.0f };  // 旋轉中心點
+
+                // 更新 hitbox
+                boss->dataWaves[i].hitbox = (Rectangle){
+                    boss->dataWaves[i].position.x - 25.5f,
+                    boss->dataWaves[i].position.y - 25.0f,
+                    51.0f,
+                    50.0f
+                };
+
+                // 繪製數據波圖片（可旋轉）
+                DrawTexturePro(textures->soldierbossbullet, source, dest, origin, angle, WHITE);
+            }
         }
     }
+
     
     // 繪製無人機
     for (int i = 0; i < BOSS_DRONE_COUNT; i++) {
         if (boss->drones[i].active) {
-            DrawRectangleRec(boss->drones[i].hitbox, BLUE);
+            // 若在鏡頭內，繪製無人機
+            if (boss->drones[i].position.x >= screenTopLeft.x && 
+                boss->drones[i].position.x <= screenBottomRight.x &&
+                boss->drones[i].position.y >= screenTopLeft.y && 
+                boss->drones[i].position.y <= screenBottomRight.y) {
+
+                // 設定旋轉角度
+                float angle = atan2f(boss->drones[i].direction.y, 
+                                   boss->drones[i].direction.x) * RAD2DEG;
+
+                // 設定貼圖繪製資訊
+                Rectangle source = { 0, 0, 90.0f, 90.0f };
+                Rectangle dest = {
+                    boss->drones[i].position.x,
+                    boss->drones[i].position.y,
+                    90.0f,
+                    90.0f
+                };
+                Vector2 origin = { 45.0f, 45.0f };  // 旋轉中心點
+
+                // 更新 hitbox
+                boss->drones[i].hitbox = (Rectangle){
+                    boss->drones[i].position.x - 45.0f,
+                    boss->drones[i].position.y - 45.0f,
+                    90.0f,
+                    90.0f
+                };
+
+                // 繪製無人機圖片（可旋轉）
+                DrawTexturePro(textures->soldiertexture, source, dest, origin, angle, WHITE);
+            }
         }
     }
 
-    // 绘制无人机子弹
+    // 繪製無人機子彈
     for (int i = 0; i < BOSS_DRONE_COUNT; i++) {
-        if (boss->drones[i].bullet.active) {
-            DrawCircleV(boss->drones[i].bullet.position, BOSS_DRONE_BULLET_RADIUS, YELLOW);
+        BossDroneBullet *bullet = &boss->drones[i].bullet;
+        if (!bullet->active) continue;
+        
+        // 檢查是否超出與玩家的距離
+        float dx = bullet->position.x - player->position.x;
+        float dy = bullet->position.y - player->position.y;
+        float distance = sqrtf(dx * dx + dy * dy);
+        
+        if (distance > 1000.0f) {
+            bullet->active = false;
+            continue;
         }
+
+        // 計算旋轉角度
+        float angle = atan2f(bullet->direction.y, bullet->direction.x) * RAD2DEG;
+
+        // 繪製子彈
+        DrawTexturePro(
+            textures->soldierstagebullet,
+            (Rectangle){ 0, 0, 51.0f, 50.0f },
+            (Rectangle){ bullet->position.x, bullet->position.y, 51.0f, 50.0f },
+            (Vector2){ 25.5f, 25.0f },
+            angle,
+            WHITE
+        );
     }
 
     // 繪製能量脈衝效果
@@ -739,6 +823,7 @@ void boss_draw(Boss *boss, GameTextures *textures) {
             (Color){255, 0, 0, 0}
         );
     }
+
 }
 
 void boss_drawhitbox(Boss *boss) {
@@ -785,15 +870,18 @@ void boss_droneFireBullet(BossDrone *drone, Player *player) {
 }
 
 // 更新子弹位置
-void boss_updateDroneBullet(BossDroneBullet *bullet, float deltaTime) {
+void boss_updateDroneBullet(BossDroneBullet *bullet, float deltaTime, Player *player) {
     if (!bullet->active) return;
     
     bullet->position.x += bullet->direction.x * bullet->speed * deltaTime;
     bullet->position.y += bullet->direction.y * bullet->speed * deltaTime;
     
-    // 检查子弹是否超出屏幕
-    if (bullet->position.x < 0 || bullet->position.x > screenWidth ||
-        bullet->position.y < 0 || bullet->position.y > screenHeight) {
+    // 檢查是否超出與玩家的距離
+    float dx = bullet->position.x - player->position.x;
+    float dy = bullet->position.y - player->position.y;
+    float distance = sqrtf(dx * dx + dy * dy);
+    
+    if (distance > 1000.0f) {
         bullet->active = false;
     }
 }
@@ -806,6 +894,7 @@ void boss_checkDroneBulletHit(BossDroneBullet *bullet, Player *player) {
     
     if (CheckCollisionCircleRec(bullet->position, BOSS_DRONE_BULLET_RADIUS, player->hitbox)&& !player->invincible) {
         player->hp -= BOSS_DRONE_DAMAGE;
+        player->hurtTimer = 0.1f;
         // 禁用武器2秒
         player->weaponDisabled = true;
         player->weaponDisableTimer = WEAPON_DISABLE_TIME;

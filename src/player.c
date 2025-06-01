@@ -25,12 +25,12 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    
+    memset(player, 0, sizeof(Player));    
     // 基本屬性初始化
     player->stage = 1;
     player->stageChanged = true;  // 初始化stageChanged
     player->position = (Vector2){14300, 300};   // 起始位置
-    player->hp = 100;                         // 初始血量
+    player->hp = 10000;                         // 初始血量
     player->coin = 100;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
@@ -44,6 +44,7 @@ void player_init(Player *player){
     player->originalSpeed = 300.0f;        // 保存原始移動速度
     player->debuffTimer = 0;
     player->tutorial = 0;                     // 教學進度
+    player->hurtTimer = 0.0;
 
     // 子彈與移動相關設定
     player->reloadtime = 3;                   // 換彈所需時間（秒）
@@ -201,6 +202,13 @@ void player_update(Player *player, float deltaTime) {
             player->coin --;
         }
         else upgradeFailTimer = upgradeFailDuration;
+
+        
+    }
+
+    if (player->hurtTimer > 0.0f) {
+        player->hurtTimer -= deltaTime;
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
     }
 
     // 更新 debuff 計時器
@@ -347,7 +355,22 @@ void player_UI(Player *player) {
     // 顯示控制反轉狀態
     char controlText[32];
     sprintf(controlText, "Controls Reversed: %s", player->controlsReversed ? "YES" : "NO");
-    DrawText(controlText, rightMargin, debuffY, 20, player->controlsReversed ? RED : GREEN);
+    DrawText(controlText, 
+             screenWidth/2 - MeasureText(controlText, 30)/2,  // 置中顯示
+             50,  // 距離頂部50像素
+             30,  // 字體大小從20改為30
+             player->controlsReversed ? RED : GREEN);
+
+    // 如果控制被反轉，顯示剩餘時間
+    if (player->controlsReversed) {
+        char timerText[32];
+        sprintf(timerText, "Time Left: %.1f", player->controlReverseTimer);
+        DrawText(timerText,
+                screenWidth/2 - MeasureText(timerText, 30)/2,  // 置中顯示
+                90,  // 在控制反轉狀態下方顯示
+                30,  // 字體大小
+                RED);
+    }
     debuffY += 30;  // 下一個debuff的Y座標
 
     // 顯示武器禁用狀態
@@ -567,7 +590,16 @@ void player_draw(Player *player, GameTextures *textures) {
         source.width = -source.width;
     }
 
-    DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
+      // 受傷時變紅（閃爍版）
+    Color playerTint = WHITE;
+    if (player->hurtTimer > 0.0f) {
+        // 閃爍效果（每0.05秒切換紅/白）
+        if (((int)(player->hurtTimer * 20) % 2) == 0) {
+            playerTint = (Color){255, 60, 60, 255}; // 紅色Tint
+        }
+    }
+    
+    DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
 
     if (player->invincible) {
         Rectangle dest = {
@@ -640,6 +672,17 @@ void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSou
             player->position = (Vector2){300, 300}; // 重生點
             player->dead = false;
             *deadsound = false;
+            player->velocityY = 0;
+            player->isJumping = false;
+            player->invincible = false;
+            player->invincibleTimeLeft = 0;
+            player->invincibleCooldownLeft = 0;
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+            player->debuffTimer = 0;
+            player->weakenTimer = 0;
         }
         else{
             *currentGameState = MENU;

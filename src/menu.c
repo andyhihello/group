@@ -59,7 +59,7 @@ void menu_update(GameState *currentGameState) {
 void menu_draw() {
 
     DrawTexture(backgroundTexture, 0, 0, WHITE);//畫主畫面的背景圖片
-    DrawText("Game", screenWidth / 2 - MeasureText("Game", 40) / 2, 100, 40, BLACK);//畫Game(遊戲名)
+    DrawText("NEX ZERO: Last Resistance", screenWidth / 2 - MeasureText("NEX ZERO: Last Resistance", 60) / 2, 160, 60, WHITE);//畫Game(遊戲名)
     DrawRectangleRec(startButton, startButtonColor); // 使用動態顏色
     DrawText("Start", startButton.x + (BUTTON_WIDTH - MeasureText("Start", 20)) / 2, startButton.y + (BUTTON_HEIGHT - 20) / 2, 20, BLACK);//畫start 按鍵
 
