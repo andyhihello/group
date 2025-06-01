@@ -50,6 +50,7 @@ typedef struct {
     Sound playerdied;
     Sound enterbossstage;
     Sound win;
+    Sound noammo;
     Music bossMusic;       
     Sound bossShieldSound;  
 } GameSounds;

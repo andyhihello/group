@@ -392,7 +392,7 @@ void player_UI(Player *player) {
 
 }
 
-void player_attack(Player *player,Camera2D camera){
+void player_attack(Player *player,Camera2D camera,GameSounds *sounds){
     Vector2 fireOrigin;
     if(player->facingRight) fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
     if(!player->facingRight)fireOrigin = (Vector2){ player->position.x -20, player->position.y + 170 };
@@ -431,6 +431,7 @@ void player_attack(Player *player,Camera2D camera){
             }
         }
     }
+    else PlaySound(sounds->noammo); 
 
 }
 

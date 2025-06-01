@@ -95,6 +95,7 @@ int main() {
             SetSoundVolume(sounds.attack,sfxVolume);
             SetSoundVolume(sounds.playerdied,sfxVolume);
             SetSoundVolume(sounds.enterbossstage,sfxVolume);
+            SetSoundVolume(sounds.noammo,sfxVolume*3);
             SetMusicVolume(sounds.bossMusic,bgmVolume);       // 修正bossmusic为bossMusic
 
             if (player.stage == 1 && !player.dead){
@@ -105,7 +106,7 @@ int main() {
                 if (camX < halfScreen) camX = halfScreen;
                 if (camX > stage1Width - screenWidth * 0.6f) camX = stage1Width - screenWidth * 0.6f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
-                player_attack(&player, camera);
+                player_attack(&player, camera,&sounds);
                 player_skillupgrade(&player,&sounds);
                 stage_door(&player,&sounds);
 
@@ -157,7 +158,7 @@ int main() {
                 if (camX < halfScreen) camX = halfScreen;
                 if (camX > stage2Width - screenWidth * 0.8f) camX = stage2Width - screenWidth * 0.8f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f };
-                player_attack(&player, camera);
+                player_attack(&player, camera,&sounds);
                 stage2_update(&boss, &player, &sounds);
                 boss_update(&boss, &player, &sounds);
                 
@@ -307,7 +308,7 @@ int main() {
             }
             EndMode2D();
             if(player.stage == 4);
-            else if(!player.dead)/*player_UI(&player)*/;    
+            else if(!player.dead)player_UI(&player);    
             else player_deadUI(&player);           
             if(player.tutorial){
                 stage_drawtutorial(&player);

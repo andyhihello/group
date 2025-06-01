@@ -77,48 +77,59 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
     sounds->attack = LoadSound("resource/sound/attack.mp3");
     sounds->playerdied = LoadSound("resource/sound/playerdied.mp3");
+    sounds->noammo = LoadSound("resource/sound/noammo.mp3");
     sounds->enterbossstage = LoadSound("resource/sound/enterbossstage.mp3");
     sounds->bossMusic = LoadMusicStream("resource/sound/boss ing.mp3");
 
 }
 
 void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
+    // Player
     UnloadTexture(textures->playerStand);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->playerRun[i]);
     UnloadTexture(textures->shieldTexture);
     UnloadTexture(textures->playerBullet);
     UnloadTexture(textures->shooting);
-    
-    // Unload boss textures
+
+    // Boss
     UnloadTexture(textures->boss);
-    
-    for (int i = 0; i < 2; i++) {
-        UnloadTexture(textures->bossAttack[i]);
-    }
-    
+    for (int i = 0; i < 2; i++) UnloadTexture(textures->bossAttack[i]);
     UnloadTexture(textures->bossLight);
 
+    // Drone
     for (int i = 0; i < 5; i++) UnloadTexture(textures->dronePatrol[i]);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->droneChase[i]);
     for (int i = 0; i < 4; i++) UnloadTexture(textures->droneAttack[i]);
     UnloadTexture(textures->droneLaser);
 
+    // Soldier
+    UnloadTexture(textures->soldierstagebullet);
+    UnloadTexture(textures->soldierbossbullet);
+    UnloadTexture(textures->soldiertexture);
+
+    // Stage
     for (int i = 0; i < 5; i++) UnloadTexture(textures->stage1Background[i]);
     for (int i = 0; i < 2; i++) UnloadTexture(textures->stage2Background[i]);
     UnloadTexture(textures->menuBackground);
     UnloadTexture(textures->settingBackground);
     UnloadTexture(textures->stage4Background);
 
-    UnloadTexture(textures->dataWaveTexture);  // 釋放數據波動畫紋理
+    // Data wave
+    UnloadTexture(textures->dataWaveTexture);
 
+    // Sound
     UnloadMusicStream(sounds->menumusic);
     UnloadMusicStream(sounds->stagemusic);
     UnloadMusicStream(sounds->tutorialmusic);
-    UnloadSound(sounds->upgrade);
-    UnloadSound(sounds->attack);
-
-    // 卸载Boss相关音效
+    UnloadMusicStream(sounds->endingmusic);
     UnloadMusicStream(sounds->bossMusic);
 
+    UnloadSound(sounds->upgrade);
+    UnloadSound(sounds->attack);
+    UnloadSound(sounds->playerdied);
+    UnloadSound(sounds->noammo);
+    UnloadSound(sounds->enterbossstage);
+
+    // Close audio
     CloseAudioDevice();
 }

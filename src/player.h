@@ -109,7 +109,7 @@ void player_update(Player *player,float deltaTime);            // 玩家移動�
 void player_update(Player *player,float deltaTime);            // 玩家移動與跳躍控制（含動畫）
 void player_reload(Player *player);          // 玩家換彈邏輯（倒數 reload 時間）
 void player_UI(Player *player);              // 畫面顯示玩家子彈數、reload 倒數
-void player_attack(Player *player, Camera2D camera); // 玩家射擊（子彈產生）
+void player_attack(Player *player, Camera2D camera,GameSounds *sounds); // 玩家射擊（子彈產生）
 void player_skillupgrade(Player *player,GameSounds *sounds);
 void player_drawbullet(Player *player, Camera2D camera ,GameTextures *textures);              // 子彈移動與繪製
 void player_draw(Player *player, GameTextures *textures);     // 玩家角色繪製（靜止 / 跑步動畫）
