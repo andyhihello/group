@@ -11,8 +11,8 @@
 #define BUTTON_PADDING 50
 
 // 函數
-void initMenu(Texture2D background);
-void updateMenu(GameState *currentGameState, Player *player, Boss *boss, Drone *drone); // 注意這裡傳遞的是指標，以便在 menu.c 中修改 main.c 的變數
-void drawMenu();
+void menu_init(Texture2D background);
+void menu_update(GameState *currentGameState); // 注意這裡傳遞的是指標，以便在 menu.c 中修改 main.c 的變數
+void menu_draw();
 
 #endif

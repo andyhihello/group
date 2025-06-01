@@ -1,7 +1,7 @@
 #include "texture.h"
 #include <stdio.h>
 
-void loadGameTextures(GameTextures *textures) {
+void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     char path[100];
 
     // Player
@@ -11,12 +11,27 @@ void loadGameTextures(GameTextures *textures) {
         textures->playerRun[i] = LoadTexture(path);
     }
     textures->shieldTexture = LoadTexture("resource/player/shield.png");
+    textures->playerBullet = LoadTexture("resource/player/bullet.png");
+    textures->shooting = LoadTexture("resource/player/shooting.png");
     
     // Boss
-    for (int i = 0; i < 6; i++) {
-        sprintf(path, "resource/boss/attack/attack%d.png", i+1);
+    textures->boss = LoadTexture("resource/boss/Boss.png");
+    for(int i = 1; i <= 5; i++) {
+        sprintf(path, "resource/boss/stage1/0%d.png", i);
+        textures->bossMovePhase1[i-1] = LoadTexture(path);
+    }
+    for(int i = 1; i <= 5; i++) {
+        sprintf(path, "resource/boss/stage2/0%d.png", i);
+        textures->bossMovePhase2[i-1] = LoadTexture(path);  // 第二阶段移动动画
+    }
+    
+    // Load boss attack animation frames
+    for (int i = 0; i < 2; i++) {
+        sprintf(path, "resource/boss/Boss attack/Boss atack 0%d.png", i+1);
         textures->bossAttack[i] = LoadTexture(path);
     }
+    
+    textures->bossLight = LoadTexture("resource/boss/stage 2 light.png");
 
     // Drone
     for (int i = 0; i < 5; i++) {
@@ -33,6 +48,12 @@ void loadGameTextures(GameTextures *textures) {
     }
     textures->droneLaser = LoadTexture("resource/drone/laser.png");
 
+    //soldier
+
+    textures->soldierstagebullet = LoadTexture("resource/soldier/stagebullet.png");
+    textures->soldierbossbullet = LoadTexture("resource/soldier/bossbullet.png");
+    textures->soldiertexture = LoadTexture("resource/soldier/soldier.png");
+
     // Stage
     for (int i = 0; i < 5; i++) {
         sprintf(path, "resource/scene/1-%d.png", i + 1);
@@ -43,13 +64,39 @@ void loadGameTextures(GameTextures *textures) {
         textures->stage2Background[i] = LoadTexture(path);
     }
     textures->menuBackground = LoadTexture("resource/scene/background.png");
+    textures->settingBackground = LoadTexture("resource/scene/settingbackground.png");
+    textures->stage4Background = LoadTexture("resource/scene/2-5.png");
+
+    textures->dataWaveTexture = LoadTexture("resource/boss/soldier/bossbullet.png");  // 載入數據波動畫圖片
+
+    //sound
+    sounds->menumusic = LoadMusicStream("resource/sound/menumusic.mp3");
+    sounds->stagemusic = LoadMusicStream("resource/sound/stagemusic.mp3");
+    sounds->tutorialmusic = LoadMusicStream("resource/sound/tutorialmusic.mp3");
+    sounds->endingmusic = LoadMusicStream("resource/sound/endingmusic.mp3");
+    sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
+    sounds->attack = LoadSound("resource/sound/attack.mp3");
+    sounds->playerdied = LoadSound("resource/sound/playerdied.mp3");
+    sounds->enterbossstage = LoadSound("resource/sound/enterbossstage.mp3");
+    sounds->bossMusic = LoadMusicStream("resource/sound/boss ing.mp3");
+
 }
 
-void unloadGameTextures(GameTextures *textures) {
+void unloadGameTextures(GameTextures *textures, GameSounds *sounds) {
     UnloadTexture(textures->playerStand);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->playerRun[i]);
-
-    for (int i = 0; i < 6; i++) UnloadTexture(textures->bossAttack[i]);
+    UnloadTexture(textures->shieldTexture);
+    UnloadTexture(textures->playerBullet);
+    UnloadTexture(textures->shooting);
+    
+    // Unload boss textures
+    UnloadTexture(textures->boss);
+    
+    for (int i = 0; i < 2; i++) {
+        UnloadTexture(textures->bossAttack[i]);
+    }
+    
+    UnloadTexture(textures->bossLight);
 
     for (int i = 0; i < 5; i++) UnloadTexture(textures->dronePatrol[i]);
     for (int i = 0; i < 9; i++) UnloadTexture(textures->droneChase[i]);
@@ -59,4 +106,19 @@ void unloadGameTextures(GameTextures *textures) {
     for (int i = 0; i < 5; i++) UnloadTexture(textures->stage1Background[i]);
     for (int i = 0; i < 2; i++) UnloadTexture(textures->stage2Background[i]);
     UnloadTexture(textures->menuBackground);
+    UnloadTexture(textures->settingBackground);
+    UnloadTexture(textures->stage4Background);
+
+    UnloadTexture(textures->dataWaveTexture);  // 釋放數據波動畫紋理
+
+    UnloadMusicStream(sounds->menumusic);
+    UnloadMusicStream(sounds->stagemusic);
+    UnloadMusicStream(sounds->tutorialmusic);
+    UnloadSound(sounds->upgrade);
+    UnloadSound(sounds->attack);
+
+    // 卸载Boss相关音效
+    UnloadMusicStream(sounds->bossMusic);
+
+    CloseAudioDevice();
 }

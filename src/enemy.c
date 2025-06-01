@@ -1,5 +1,6 @@
 #include "enemy.h"
 #include "main.h"
+#include "setting.h"
  
 
 // 計算兩點之間的距離
@@ -19,6 +20,16 @@ Rectangle enemy_Dronehitbox(Drone *drone) {
         drone->position.y + 120,  
         200,                   
         530                     
+    };
+}
+
+Rectangle enemy_SoldierHitbox(Soldier *soldier) {
+    // 依照你士兵圖的大小來設（這裡假設 90x90，可根據 soldiertexture 實際寬高調整）
+    return (Rectangle){
+        soldier->position.x,
+        soldier->position.y,
+        90,    // 建議改成 textures->soldiertexture.width
+        90     // 建議改成 textures->soldiertexture.height
     };
 }
 
@@ -50,9 +61,8 @@ void enemy_initDrone(Drone* drone) {
 void enemy_initSoldier(Soldier* soldier) {
     
     soldier->active = true;
-    soldier->position = (Vector2){2000, 500};
-    soldier->health = 120.0f;
-    soldier->attackCooldown = 3.0f;         // 每3秒攻擊一次
+    soldier->health = 50.0f;
+    soldier->attackCooldown = 5.0f;         // 每3秒攻擊一次
     soldier->timeSinceLastAttack = 0.0f;
     soldier->type = ROBOT_SOLDIER;
     soldier->maxDamageDistance = 100.0f;    // 最大傷害距離
@@ -65,6 +75,7 @@ void enemy_initSoldier(Soldier* soldier) {
         soldier->bullets[i].active = false;
         soldier->bullets[i].speed = 300.0f;
         soldier->bullets[i].damage = soldier->maxDamage;
+        soldier->bullets[i].lifetime = 0.0f;
     }
 }
 
@@ -119,26 +130,30 @@ void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player) {
             sin(finalAngle)
         };
         soldier->bullets[i].active = true;
+        
     }
 }
 
 // 判斷雷射是否擊中玩家
-void enemy_laserDamagePlayer(Drone *drone, Player *player) {
+void enemy_laserDamagePlayer(Drone *drone, Player *player,GameSounds *sounds) {
+    
     if (drone->laser.active == false||player->invincible == true) return;
     if (CheckCollisionRecs(drone->laserhitbox, player->hitbox) ) {
         player->hp -= drone->laser.damage;
+        player->hurtTimer = 0.1f;
     }
 }
 
 // 判斷散彈是否擊中玩家
 void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* soldier) {
-    if (bullet == NULL || !bullet->active) return;
+    if (bullet == NULL || !bullet->active||player->invincible == true) return;
 
     float bulletRadius = 5.0f;  // 你子彈的半徑
 
     if (CheckCollisionCircleRec(bullet->position, bulletRadius, player->hitbox)) {
         float damage = enemy_calculateDistanceBasedDamage(bullet, player, soldier);
         player->hp -= damage;
+        player->hurtTimer = 0.1f;
         bullet->active = false;  // 子彈命中後消失
     }
 }
@@ -173,18 +188,15 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
     float dist = enemy_distanceX(drone_center, player_center);  // 只算 X 軸
 
-    drone->facingRight = (player_center.x < drone_center.x);
+    
 
     EnemyState previousState = drone->state;  // 新增：記錄上一個狀態
 
     // 狀態切換邏輯
-    if (dist > 900) {
-        drone->state = PATROL;
-    } else if (dist <= 900 && dist > 800) {
-        drone->state = CHASE;
-    } else if (dist <= 800) {
-        drone->state = ATTACK;
-    }
+    if (dist <= 800 && dist > 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = CHASE;
+    else if (dist <= 700 && (drone->facingRight == (player_center.x < drone_center.x))) drone->state = ATTACK;
+    else if (dist <= 500) drone->state = ATTACK;
+    else drone->state = PATROL;
     
     // 狀態改變時，重設動畫
     if (drone->state != previousState) {
@@ -195,16 +207,19 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
     switch (drone->state) {
         case PATROL:
-            drone->position.x += sin(GetTime()) * 4.0f;
-            
+            float move = sin(0.7*GetTime()) * 4.0f;
+            drone->position.x += move;
+            if(move > 0)drone->facingRight = false;
+            if(move < 0)drone->facingRight = true;        
             drone->frameTimer += GetFrameTime();
             if (drone->frameTimer >= 0.1f) {  // 控制攻擊動畫播放速度
                 drone->currentFrame++;
-                if (drone->currentFrame >= 4) drone->currentFrame = 0;  // 假設攻擊動畫有 4 張圖
+                if (drone->currentFrame >= 4) drone->currentFrame = 0;  // 攻擊動畫有 4 張圖
                 drone->frameTimer = 0;
             }
             break;
         case CHASE:
+            drone->facingRight = (player_center.x < drone_center.x);
             if ((player->hitbox.x + player->hitbox.width / 2) > drone->position.x) {
                 drone->position.x += 200.0f * deltaTime;
             } else {
@@ -219,7 +234,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
 
             break;
         case ATTACK:
-
+            drone->facingRight = (player_center.x < drone_center.x);
             drone->frameTimer += deltaTime;
             if (drone->frameTimer >= 0.4f) {
                 drone->currentFrame++;
@@ -232,7 +247,7 @@ void enemy_updateDrone(Drone* drone, Player* player, float deltaTime) {
                 enemy_DroneFireLaser(drone, player);
             }
             else if(drone->currentFrame != 3){
-                drone->laser.active == false;
+                drone->laser.active = false;
             }
             break;
     }
@@ -252,27 +267,63 @@ void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime) {
     int sceneWidth;
     if(player->stage == 1) sceneWidth = stage1Width;
     soldier->timeSinceLastAttack += deltaTime;
-    if (soldier->timeSinceLastAttack >= soldier->attackCooldown) {
+    float distToPlayer = enemy_distance(soldier->position, player->position);
+    if (distToPlayer <= 1200.0f && soldier->timeSinceLastAttack >= soldier->attackCooldown) {
         enemy_SoldierFireScatterShot(soldier, player);
         soldier->timeSinceLastAttack = 0.0f;
     }
+    soldier->hitbox = enemy_SoldierHitbox(soldier);
     for (int i = 0; i < 3; i++) {
-        if (soldier->bullets[i].active) {
-            soldier->bullets[i].position.x += soldier->bullets[i].direction.x * soldier->bullets[i].speed * deltaTime;
-            soldier->bullets[i].position.y += soldier->bullets[i].direction.y * soldier->bullets[i].speed * deltaTime;
-            if (soldier->bullets[i].position.x < 0 ||
-                soldier->bullets[i].position.x > sceneWidth ||
-                soldier->bullets[i].position.y < 0 ||
-                soldier->bullets[i].position.y > screenHeight) {
-                soldier->bullets[i].active = false;
-            }
+    if (soldier->bullets[i].active) {
+        soldier->bullets[i].position.x += soldier->bullets[i].direction.x * soldier->bullets[i].speed * deltaTime;
+        soldier->bullets[i].position.y += soldier->bullets[i].direction.y * soldier->bullets[i].speed * deltaTime;
+        
+        soldier->bullets[i].lifetime += deltaTime;
+
+        if (soldier->bullets[i].position.x < 0 ||
+            soldier->bullets[i].position.x > sceneWidth ||
+            soldier->bullets[i].position.y < 0 ||
+            soldier->bullets[i].position.y > screenHeight ||
+            soldier->bullets[i].lifetime > 3.0f) 
+        {
+            soldier->bullets[i].active = false;
+            soldier->bullets[i].lifetime = 0.0f;
+            
         }
     }
 }
+}
 
-void enemy_bulletDamageDrone(Player *player, Drone *drone) {
+void updateSoldierBullets(Soldier *soldier, float deltaTime) {
+    for (int i = 0; i < 3; i++) {
+    if (soldier->bullets[i].active) {
+        // 位置更新
+        soldier->bullets[i].position.x += soldier->bullets[i].direction.x * soldier->bullets[i].speed * deltaTime;
+        soldier->bullets[i].position.y += soldier->bullets[i].direction.y * soldier->bullets[i].speed * deltaTime;
+        // hitbox 跟著同步
+        soldier->bullets[i].hitbox.x = soldier->bullets[i].position.x;
+        soldier->bullets[i].hitbox.y = soldier->bullets[i].position.y;
+        // 時間累加
+        soldier->bullets[i].lifetime += deltaTime;
 
+        // 判斷存活時間 or 超界
+        if (soldier->bullets[i].position.x < 0 ||
+            soldier->bullets[i].position.x > 1600 ||
+            soldier->bullets[i].position.y < 0 ||
+            soldier->bullets[i].position.y > screenHeight ||
+            soldier->bullets[i].lifetime > 1.0f) // 例如3秒自動消失
+        {
+            soldier->bullets[i].active = false;
+        }
+        
+    }
+}
 
+}
+
+void enemy_bulletDamageDrone(Player *player, Drone *drone,GameSounds *sounds) {
+
+    
     if (!drone->active) return;  // 跳過已經死掉的 Drone
 
     for (int i = 0; i < MAX_BULLETS; i++) {
@@ -285,7 +336,8 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone) {
             };
 
             if (CheckCollisionRecs(bulletRect, drone->hitbox)) {
-                drone->health -= player->damage;                      // 扣血
+                drone->health -= player->damage;     
+                PlaySound(sounds->attack);                 // 扣血
                 player->bullets[i].active = false;       // 子彈消失
     
                 if (drone->health <= 0) {
@@ -300,6 +352,73 @@ void enemy_bulletDamageDrone(Player *player, Drone *drone) {
 
         
     }
+}
+
+void enemy_bulletDamageSoldier(Player *player, Soldier *soldier, GameSounds *sounds) {
+    if (!soldier->active) return;  // 跳過死掉的士兵
+
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (player->bullets[i].active) {
+            Rectangle bulletRect = {
+                player->bullets[i].position.x,
+                player->bullets[i].position.y,
+                SIZE_BULLET,
+                SIZE_BULLET
+            };
+
+            // 判斷是否有碰撞
+            if (CheckCollisionRecs(bulletRect, soldier->hitbox)) {
+                soldier->health -= player->damage;
+                PlaySound(sounds->attack);
+                player->bullets[i].active = false;
+
+                if (soldier->health <= 0) {
+                    soldier->active = false;
+                    player->coin += 1;
+
+                    // 清除士兵所有子彈
+                    for (int j = 0; j < 3; j++) {
+                        soldier->bullets[j].active = false;
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
+void enemy_drawSoldierBullets(Soldier* soldier, GameTextures *textures) {
+    for (int i = 0; i < 3; i++) {
+        if (soldier->bullets[i].active) {
+            // 以 textures->soldierstagebullet 畫在子彈中心
+            DrawTexture(
+                textures->soldierstagebullet,
+                soldier->bullets[i].position.x - textures->soldierstagebullet.width / 2,
+                soldier->bullets[i].position.y - textures->soldierstagebullet.height / 2,
+                WHITE
+            );
+        }
+    }
+}
+
+void enemy_drawSoldier(Soldier* soldier, GameTextures *textures) {
+    if (!soldier->active) return;
+    DrawTexture(
+        textures->soldiertexture,
+        soldier->position.x,
+        soldier->position.y,
+        WHITE
+    );
+    
+    // 血條繪製（如需）
+    float barWidth = 80.0f;
+    float barHeight = 8.0f;
+    float hpRatio = soldier->health / 50.0f; // 以120為滿血
+    float barX = soldier->position.x + textures->soldiertexture.width/2 - barWidth/2;
+    float barY = soldier->position.y - 16;
+    DrawRectangle(barX, barY, barWidth, barHeight, GRAY);
+    DrawRectangle(barX, barY, barWidth * hpRatio, barHeight, GREEN);
+    DrawRectangleLines(barX, barY, barWidth, barHeight, BLACK);
 }
 
 void enemy_drawDrone(Drone* drone, GameTextures *textures) {
@@ -358,8 +477,21 @@ void enemy_drawLaser(Drone* drone, GameTextures *textures) {
     }
 }
 
-void enemy_hitbox(Drone* drone){
-    if(drone->active)DrawRectangleLinesEx(drone->hitbox, 2, RED);
-    if(drone->laser.active)DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
+void enemy_hitbox(Drone* drone, Soldier* soldier, GameTextures* textures) {
+    if (drone && drone->active) DrawRectangleLinesEx(drone->hitbox, 2, RED);
+    if (drone && drone->laser.active) DrawRectangleLinesEx(drone->laserhitbox, 2, YELLOW);
+    if (soldier && soldier->active) {
+        // 畫士兵本體 hitbox（請確保 soldier->hitbox 正確同步位置）
+        DrawRectangleLinesEx(soldier->hitbox, 2, DARKBLUE);
+
+        for (int i = 0; i < 3; i++) {
+            if (soldier->bullets[i].active) {
+                DrawRectangleLinesEx(soldier->bullets[i].hitbox, 1, SKYBLUE);
+                // 畫圓形 debug
+                float bulletRadius = 5.0f;
+                DrawCircleLines(soldier->bullets[i].position.x, soldier->bullets[i].position.y, bulletRadius, ORANGE);
+            }
+        }
+    }
 }
 

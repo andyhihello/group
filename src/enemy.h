@@ -49,7 +49,8 @@ typedef struct {
     float speed;          // 子彈速度
     float damage;         // 傷害值
     bool active;          // 是否啟動中
-
+    Rectangle hitbox; 
+    float lifetime;
     
 } ScatterBullet;
 
@@ -77,6 +78,7 @@ typedef struct {
 /// 機器士兵（敵人）
 typedef struct {
     bool active;
+    Rectangle hitbox;
     Vector2 position;           // 士兵位置
     float health;               // 血量
     float attackCooldown;       // 攻擊冷卻時間（秒）
@@ -117,11 +119,11 @@ void enemy_DroneFireLaser(Drone* drone, Player *player);
 /// 機器士兵發射散射子彈
 void enemy_SoldierFireScatterShot(Soldier* soldier, Player *player);
 
-void enemy_laserDamagePlayer(Drone *drone, Player *player);
+void enemy_laserDamagePlayer(Drone *drone, Player *player,GameSounds *sounds);
 
 void enemy_bulletDamagePlayer(ScatterBullet* bullet, Player *player,Soldier* soldier);
 
-
+void enemy_bulletDamageSoldier(Player *player, Soldier *soldier, GameSounds *sounds);
 
 float enemy_calculateDistanceBasedDamage(ScatterBullet* bullet, Player *player, Soldier* soldier);
 /// 更新無人機行動（攻擊冷卻、雷射狀態）
@@ -130,19 +132,19 @@ void enemy_updateDrone(Drone* drone,Player *player, float deltaTime);
 /// 更新機器士兵行動（攻擊冷卻、子彈更新）
 void enemy_updateSoldier(Soldier* soldier, Player *player, float deltaTime);
 
+void enemy_bulletDamageDrone(Player *player, Drone *drone,GameSounds *sounds);
 
-void enemy_bulletDamageDrone(Player *player, Drone *drone);
-
-
+void enemy_drawSoldierBullets(Soldier* soldier, GameTextures *textures);
 
 /// 根據距離計算子彈對玩家的傷害（越近傷害越高）
 
+void enemy_drawSoldier(Soldier* soldier, GameTextures *textures);
 
 void enemy_drawDrone(Drone* drone, GameTextures *textures);
 
 void enemy_drawLaser(Drone* drone, GameTextures *textures);
 
-void enemy_hitbox(Drone* drone);
+void enemy_hitbox(Drone* drone, Soldier* soldier, GameTextures* textures);
 
 
 #endif 

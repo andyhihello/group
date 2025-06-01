@@ -6,42 +6,37 @@
 #include "stage.h"
 #include "menu.h"
 #include "texture.h"
+#include "hack.h"
+#include "setting.h"
 
 
 int main() {
     InitWindow(screenWidth, screenHeight, "Game"); // 設定初始視窗；遊戲名稱設定為 "Game"
+    InitAudioDevice();
     SetTargetFPS(60);//(raylib)每秒鐘跑60個畫面
 
     GameTextures textures;
-    loadGameTextures(&textures);
-    
+    GameSounds sounds;
+    loadGameTextures(&textures,&sounds);
+    double startTime;
+    bool savingdata;
 
     // 初始化
-    initMenu(textures.menuBackground);
+    menu_init(textures.menuBackground);
     GameState currentGameState = MENU;
     Player player;
-    player_init(&player);
-    Drone drone[MAX_DRONES];
-    Soldier soldier;
-
-    for (int i = 0; i < MAX_DRONES; i++) {
-        enemy_initDrone(&drone[i]);
-        drone[i].position = (Vector2){2000 + i * 1500, 200};  // 每台 Drone 分開一點
-    }
-    enemy_initSoldier(&soldier);
-    Camera2D camera = { 0 };
-    camera.target = player.position;
-    camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
-    camera.zoom = 1.0f;
-    float camX = player.position.x;
-    float halfScreen = screenWidth * 0.4f;
     Boss boss;
-    boss_init(&boss);
-
-    int debug = 0;
-
+    Drone drone[MAX_DRONES];
+    Soldier soldier[MAX_SOLDIERS];
+    HackScene hackScene;
+    Camera2D camera = { 0 };
     
-
+    float camX;
+    float halfScreen;
+    
+    int debug = 0;
+    bool Isinit = false;
+    bool deadsound = false;
 
     // 主遊戲迴圈
     while (!WindowShouldClose()) {
@@ -49,35 +44,111 @@ int main() {
 
         if (currentGameState == MENU) {
             // 輸入處理 (選單的輸入處理在 updateMenu 中)
-            updateMenu(&currentGameState, &player, &boss, drone);
+            menu_update(&currentGameState);
+            if (!IsMusicStreamPlaying(sounds.menumusic)) {
+                PlayMusicStream(sounds.menumusic);
+            }
+
+            SetMusicVolume(sounds.menumusic, bgmVolume);
+            UpdateMusicStream(sounds.menumusic);
         } 
+        
+        else if (currentGameState == SETTINGS) {
+            updateSettings(&currentGameState);
+            if (!IsMusicStreamPlaying(sounds.menumusic)) {
+                PlayMusicStream(sounds.menumusic);
+            }
+
+            SetMusicVolume(sounds.menumusic, bgmVolume);
+            UpdateMusicStream(sounds.menumusic);
+        }
 
         else if (currentGameState == GAME) {
+            if(!Isinit){
+                player_init(&player);
+                for (int i = 0; i < MAX_DRONES; i++) {
+                    enemy_initDrone(&drone[i]);
+                    drone[i].position = (Vector2){2000 + i * 2000, 200};  // 每台 Drone 分開一點
+                }
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    enemy_initSoldier(&soldier[i]);
+                    soldier[i].position = (Vector2){ 3500 + i * 1500, 400 }; // 舉例
+                }
+                boss_init(&boss);
+                hack_init(&hackScene);
+
+                camera.target = player.position;
+                camera.offset = (Vector2){ screenWidth * 0.4f, screenHeight / 2.0f };
+                camera.zoom = 1.0f;
+                camX = player.position.x;
+                halfScreen = screenWidth * 0.4f;
+                Isinit = true;
+
+                startTime = GetTime();
+                savingdata = false;
+                
+            }
             if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
+
+            //聲音設定
+            SetSoundVolume(sounds.upgrade,sfxVolume);
+            SetSoundVolume(sounds.attack,sfxVolume);
+            SetSoundVolume(sounds.playerdied,sfxVolume);
+            SetSoundVolume(sounds.enterbossstage,sfxVolume);
+            SetMusicVolume(sounds.bossMusic,bgmVolume);       // 修正bossmusic为bossMusic
+
             if (player.stage == 1 && !player.dead){
                 player_update(&player, deltaTime);  
-                for (int i = 0; i < MAX_DRONES; i++) {
-                    enemy_updateDrone(&drone[i], &player, deltaTime); 
-                }  
-                
-                enemy_updateSoldier(&soldier, &player, deltaTime); 
+            
                 camX = player.position.x;
                 //使背景不跑出畫面
                 if (camX < halfScreen) camX = halfScreen;
                 if (camX > stage1Width - screenWidth * 0.6f) camX = stage1Width - screenWidth * 0.6f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f  };
                 player_attack(&player, camera);
-                player_skillupgrade(&player);
-                stage_door(&player);
+                player_skillupgrade(&player,&sounds);
+                stage_door(&player,&sounds);
 
                 for (int i = 0; i < MAX_DRONES; i++) {
-                    enemy_laserDamagePlayer(&drone[i], &player);
-                    enemy_bulletDamageDrone(&player, &drone[i]); 
-                }                 
+                    enemy_updateDrone(&drone[i], &player, deltaTime); 
+                    enemy_laserDamagePlayer(&drone[i], &player,&sounds);
+                    enemy_bulletDamageDrone(&player, &drone[i],&sounds); 
+                } 
+
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    if (soldier[i].active){
+                    enemy_updateSoldier(&soldier[i], &player, deltaTime);
+                    enemy_bulletDamageSoldier(&player, &soldier[i], &sounds);
+                    
+
+                    for (int j = 0; j < 3; j++)
+                        enemy_bulletDamagePlayer(&soldier[i].bullets[j], &player, &soldier[i]);
+                    }
+                }
+
+                
+                if(player.tutorial){
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        player.tutorial++;
+                        if(player.tutorial == 4)player.tutorial = false; 
+                    }
+                    if (!IsMusicStreamPlaying(sounds.tutorialmusic)) {
+                        PlayMusicStream(sounds.tutorialmusic);
+                    }
+
+                    SetMusicVolume(sounds.tutorialmusic, bgmVolume);
+                    UpdateMusicStream(sounds.tutorialmusic);
+                    
+                }
+                else{
+                    if (!IsMusicStreamPlaying(sounds.stagemusic)) {
+                        PlayMusicStream(sounds.stagemusic);
+                    }
+
+                    SetMusicVolume(sounds.stagemusic, bgmVolume);
+                    UpdateMusicStream(sounds.stagemusic);
+                }
             }
-            else if(player.dead){
-                player_dead(&player);
-            }   
 
             else if (player.stage == 2 && !player.dead) {
                 player_update(&player,deltaTime);
@@ -87,30 +158,73 @@ int main() {
                 if (camX > stage2Width - screenWidth * 0.8f) camX = stage2Width - screenWidth * 0.8f;
                 camera.target = (Vector2){ camX, screenHeight / 2.0f };
                 player_attack(&player, camera);
-                stage2_update(&player, &boss);
-                boss_update(&boss,&player);
-            }
-
-            if(player.tutorial){
-                if (IsKeyPressed(KEY_SPACE)) {
-                    player.tutorial++;
-                    if(player.tutorial == 4)player.tutorial = false; 
+                stage2_update(&boss, &player, &sounds);
+                boss_update(&boss, &player, &sounds);
+                
+                // 只在boss未死亡时更新黑客小游戏
+                if (!boss.isDead) {
+                    hack_update(&hackScene, &boss, &player);
+                }
+                
+                // 如果黑客场景激活，绘制它
+                if (hackScene.isActive) {
+                    hack_draw(&hackScene);
                 }
             }
+            else if (player.stage == 3) {
+                // 在stage 3中更新和显示黑客场景
+                hack_update(&hackScene, &boss, &player);
+                hack_draw(&hackScene);
+            }
+            else if (player.stage == 4) {
+                if (player.stageChanged) {  // 当stage刚改变时
+                    player.position = (Vector2){ 300, 400 };  // 设置stage4的初始位置
+                    player.stageChanged = false;
+                }
+                camX = player.position.x;
+                //使背景不跑出畫面
+                if (camX < halfScreen) camX = halfScreen;
+                if (camX > 3000 * 0.7f-60) camX = 3000 * 0.7f-60;
+                camera.target = (Vector2){ camX, screenHeight / 2.0f  };
+                
+                stage_exitdoor(&player,&currentGameState,&Isinit);
+                player_update(&player, GetFrameTime());
 
+                if (!IsMusicStreamPlaying(sounds.endingmusic)) {
+                        PlayMusicStream(sounds.endingmusic);
+                    }
 
+                SetMusicVolume(sounds.endingmusic, bgmVolume*0.5);
+                UpdateMusicStream(sounds.endingmusic);
+                
+            }
+
+            if(player.dead){
+                if(!deadsound) {
+                    PlaySound(sounds.playerdied);
+                    deadsound = true;
+                }
+                player_dead(&player, &currentGameState,&Isinit,&sounds,&deadsound);
+                
+                
+            }   
+
+            if(boss.isDead){
+                if(!savingdata){
+                    double completeTime = GetTime() - startTime;
+                    stage_saveCompletionTime(completeTime);
+                    savingdata = true;
+                }
+            }
         } 
-        else if (currentGameState == SETTINGS) {
-            // 設定邏輯
-            // ...
-        }
+        
             
         // 開始繪製
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
+        
         if (currentGameState == MENU) {
-            drawMenu();
+            menu_draw();
         } 
         else if (currentGameState == GAME) {
 
@@ -126,23 +240,44 @@ int main() {
                     enemy_drawDrone(&drone[i], &textures);
                     enemy_drawLaser(&drone[i], &textures);      
                 }
+
+                for (int i = 0; i < MAX_SOLDIERS; i++) {
+                    enemy_drawSoldier(&soldier[i], &textures);
+                    enemy_drawSoldierBullets(&soldier[i], &textures);
+                }
                 
-                player_drawbullet(&player,camera);
+                player_drawbullet(&player,camera,&textures);
                 
                 if(debug){
                     player_drawhitbox(&player);
                     stage_drawhitbox();
                     for (int i = 0; i < MAX_DRONES; i++) {
-                        enemy_hitbox(&drone[i]);
+                        enemy_hitbox(&drone[i], NULL, &textures); // 只畫 Drone
                     }
+                    for (int i = 0; i < MAX_SOLDIERS; i++) {
+                        enemy_hitbox(NULL, &soldier[i], &textures); // 只畫 Soldier
+                    }
+
+                    
                 }
+
+                
                       
             }
             else if (player.stage == 2) {
                 stage2_draw(textures.stage2Background);
-                boss_update(&boss, &player);
-                player_drawbullet(&player, camera);
-                boss_draw(&boss, &textures);
+                boss_update(&boss, &player, &sounds);
+                player_drawbullet(&player, camera,&textures);
+                
+                // 更新屏幕視角範圍
+                Vector2 screenTopLeft = { camera.target.x - camera.offset.x, camera.target.y - camera.offset.y };
+                Vector2 screenBottomRight = { 
+                    screenTopLeft.x + GetScreenWidth(), 
+                    screenTopLeft.y + GetScreenHeight() 
+                };
+                
+                // 繪製boss
+                boss_draw(&boss, &textures, screenTopLeft, screenBottomRight, &player);
                 player_draw(&player, &textures);
                 
                 if(debug) {
@@ -161,40 +296,33 @@ int main() {
                         }
                     }
                 }
+            }
+            else if (player.stage == 4){
+                DrawTexture(textures.stage4Background, 0, 0, WHITE);
+                DrawText("Congratulation! You stop the Neural Override Project", 550, 300, 32, WHITE);
+                DrawText("Thank you for playing!", 680, 400, 50, WHITE);
+                stage_displayTopCompletionTimes();
+                player_draw(&player, &textures);
                 
-                // 检查Boss是否死亡
-                if (boss.isDead) {
-                    const char* text = "GAME COMPLETE!";
-                    int fontSize = 60;
-                    Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 2);
-                    Vector2 textPos = {
-                        screenWidth/2 - textSize.x/2,
-                        screenHeight/2 - textSize.y/2
-                    };
-                    DrawText(text, textPos.x, textPos.y, fontSize, WHITE);
-                }
             }
             EndMode2D();
-
-            if(!player.dead)player_UI(&player);    
-            else player_deadUI(&player);    
-
+            if(player.stage == 4);
+            else if(!player.dead)player_UI(&player);    
+            else player_deadUI(&player);           
             if(player.tutorial){
                 stage_drawtutorial(&player);
             }
-            if(debug){
-                
-            }
+            
         } 
         else if (currentGameState == SETTINGS) {
-            // 在這裡繪製設定畫面
+            drawSettings(&textures);
         }
-
+        
         EndDrawing();
     }
-
+    //stage_drawgridlines(); // 修正圖片用網格
     // 釋放資源並關閉  
-    unloadGameTextures(&textures);
+    unloadGameTextures(&textures,&sounds);
 
     CloseWindow();
     return 0;

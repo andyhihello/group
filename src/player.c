@@ -1,11 +1,19 @@
+#include "raylib.h"
 #include "player.h"
+#include "boss.h"
 #include "main.h"
-
+#include "setting.h"
+#include <math.h>
 Rectangle stage1_wall = { 9010, 0, 70, 455 };
 float upgradeEffectTimer = 0.0f; // 特效剩餘時間
-const float upgradeEffectDuration = 1.0f; // 特效持續秒數
-float upgradeFailTimer;         // 顯示失敗訊息用的計時器
-const float upgradeFailDuration = 1.0f; // 顯示 1 秒
+const float upgradeEffectDuration = 1.5f; // 特效持續秒數
+float upgradeFailTimer = 0.0f;        // 顯示失敗訊息用的計時器
+const float upgradeFailDuration = 1.5f; // 顯示 1.5 秒
+float healEffectTimer = 0.0f;
+const float healEffectDuration = 1.5f;
+
+// 在文件開頭添加靜態變量
+static int frameCount = 0;
 
 void player_hitbox(Player *player) {
     player->hitbox = (Rectangle){
@@ -17,43 +25,56 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    // 設定腳色初始設定
-    player->position = (Vector2){300, 300};
-    player->hp = 100;
-    player->coin = 0;
-    player->damage = 5;
-    player->invincible = false;
-    player->invincibleDuration = 3.0f;
-    player->invincibleTimeLeft = 0.0f;
-    player->invincibleCooldown = 15.0f;
-    player->invincibleCooldownLeft = 0.0f;
-    memset(player->bullets, 0, sizeof(player->bullets));
-    player->reloadtime = 3;
-    player->reloadTimeLeft = 0;
-    player->ammo = 15;
-    player->maxAmmo = 15;
-    player->speed = 300;
+    memset(player, 0, sizeof(Player));     
+    // 基本屬性初始化
     player->stage = 1;
-    player->tutorial = 1;
-    player->dead = false;
+    player->stageChanged = true;  // 初始化stageChanged
+    player->position = (Vector2){300, 300};   // 起始位置
+    player->hp = 100;                         // 初始血量
+    player->coin = 1;                         // 初始金幣
+    player->damage = 5;                       // 子彈傷害
+    player->dead = false;                     // 是否死亡
+    player->invincible = false;               // 是否無敵
+    player->invincibleDuration = 3.0f;        // 無敵持續時間
+    player->invincibleTimeLeft = 0.0f;        // 無敵剩餘時間
+    player->invincibleCooldown = 15.0f;       // 無敵技能冷卻時間
+    player->invincibleCooldownLeft = 0.0f;    // 無敵剩餘冷卻
+    memset(player->bullets, 0, sizeof(player->bullets)); // 清空子彈狀態
+    player->originalDamage = player->damage;  // 保存原始值
+    player->originalSpeed = 300.0f;        // 保存原始移動速度
+    player->debuffTimer = 0;
+    player->tutorial = 1;                     // 教學進度
+    player->hurtTimer = 0.0;
+    player->hurtTimer = 0.0;
 
+    // 子彈與移動相關設定
+    player->reloadtime = 3;                   // 換彈所需時間（秒）
+    player->reloadTimeLeft = 0;               // 換彈倒數時間
+    player->ammo = 100;                       // 當前子彈數
+    player->maxAmmo = 100;                    // 最大子彈數
+    player->speed = 300.0f;        // 設置初始移動速度
+    player->stage = 1;                        // 起始關卡
+    player->controlsReversed = false;         // 是否控制反轉
+    player->controlReverseTimer = 0.0f;       // 控制反轉剩餘時間
+    player->weaponDisabled = false;           // 武器禁用狀態
+    // 升級系統參數初始化
+    player->upgrade_reload_cost = 2;          // 第一次升級換彈所需金幣
+    player->upgrade_ammo_cost = 1;            // 第一次升級彈容量所需金幣
+    player->upgrade_invincible_cost = 3;      // 第一次升級無敵CD所需金幣
 
-    // 設定升級用參數
-    player->upgrade_reload_cost = 2;      // 換彈升級要20 coin
-    player->upgrade_ammo_cost = 1;         // 容量升級要15 coin
-    player->upgrade_invincible_cost = 3;   // 無敵CD升級要25 coin
+    player->reload_upgrade_ratio = 0.9f;      // 每次升級後換彈時間變成原來的90%
+    player->ammo_upgrade_amount = 5;          // 每次升級增加5發彈量
+    player->invincible_upgrade_ratio = 0.85f; // 每次升級無敵CD變成原來的85%
 
-    player->reload_upgrade_ratio = 0.9f;    // 每次換彈變成原本90%
-    player->ammo_upgrade_amount = 5;         // 每次多5發
-    player->invincible_upgrade_ratio = 0.85f; // 每次CD剩下85%
+    player->reload_upgrade_times = 0;         // 換彈升級次數
+    player->ammo_upgrade_times = 0;           // 彈量升級次數
+    player->invincible_upgrade_times = 0;     // 無敵CD升級次數
 
-    player->reload_upgrade_times = 0;
-    player->ammo_upgrade_times = 0;
-    player->invincible_upgrade_times = 0;
+    player->shootEffectTimer = 0.0f;          // 開槍特效倒數時間
 }
 
-void player_update(Player *player,float deltaTime){
-
+void player_update(Player *player, float deltaTime) {
+    // 更新無敵狀態與冷卻
     if (IsKeyPressed(KEY_E) && player->invincibleCooldownLeft <= 0.0f) {
         player->invincible = true;
         player->invincibleTimeLeft = player->invincibleDuration;
@@ -66,79 +87,169 @@ void player_update(Player *player,float deltaTime){
             player->invincible = false;
         }
     }
-    
     if (player->invincibleCooldownLeft > 0.0f) {
         player->invincibleCooldownLeft -= deltaTime;
     }
 
-    if (!player->dead && player->hp <= 0) {
-        player->dead = true;
+    // 控制反轉更新
+    if (player->controlsReversed) {
+        player->controlReverseTimer -= deltaTime;
+        if (player->controlReverseTimer <= 0) {
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+        }
     }
 
-    // 左移
-    if (IsKeyDown(KEY_A)) {
-        player->position.x -= player->speed * deltaTime;
+    // 控制反轉後左右鍵對調
+    if (player->controlsReversed){
+        // 移動反轉從左移改成右移
+        if (IsKeyDown(KEY_A)) {
+            player->position.x += player->speed * deltaTime;
 
-        // 更新玩家碰撞矩形
-        player_hitbox(player);
+            // 如果碰到牆，就把角色卡在牆的左側
+            if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - stage1_wall.width - playerXoffset;
+
+            player->facingRight = true;
+        }
+
+        // 移動反轉從右移改成左移
+        if (IsKeyDown(KEY_D)) {
+            player->position.x -= player->speed * deltaTime;
+
+            // 如果碰到牆，就把角色卡在牆的右側
+            if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + playerWidth - playerXoffset;           
+
+            player->facingRight = false;
+        }
+    }
+    else{
+        // 左移
+        if (IsKeyDown(KEY_A)) {
+        player->position.x -= player->speed * deltaTime;
 
         // 如果碰到牆，就把角色卡在牆的右側
         if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x + stage1_wall.width - playerXoffset;
 
         player->facingRight = false;
+        }
+
+        // 右移
+        if (IsKeyDown(KEY_D)) {
+            player->position.x += player->speed * deltaTime;
+
+            // 如果碰到牆，就把角色卡在牆的左側
+            if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
+
+            player->facingRight = true;
+        }
     }
-
-    // 右移
-    if (IsKeyDown(KEY_D)) {
-        player->position.x += player->speed * deltaTime;
-
-        // 更新玩家碰撞矩形
-        player_hitbox(player); 
-
-        // 如果碰到牆，就把角色卡在牆的左側
-        if(player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall))player->position.x = stage1_wall.x - playerWidth - playerXoffset;           
-
-        player->facingRight = true;
-    }
-
-    //跑步動畫
+    // 跑步動畫控制
     if (IsKeyDown(KEY_A) || IsKeyDown(KEY_D)) {
-        player->frameTimer += GetFrameTime();
+        player->frameTimer += deltaTime;
         player->isRunning = true;
         if (player->frameTimer >= 0.1f) {
-            player->currentFrame++;
-            if (player->currentFrame >= 9) player->currentFrame = 0;
+            player->currentFrame = (player->currentFrame + 1) % 9;
             player->frameTimer = 0;
         }
     } else {
         player->currentFrame = 0;
         player->isRunning = false;
     }
-    
-    // 限制玩家不能超出背景範圍
-    if (player->position.x < -50) player->position.x = -50;
-    if (player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
 
-    //跳躍
-    if (IsKeyPressed(KEY_W) && !player->isJumping) {
-        player->velocityY = JUMP_STRENGTH;  
-        player->isJumping = true;
+    // 跳躍控制
+    if (!player->controlsReversed) {
+        if (IsKeyPressed(KEY_W) && !player->isJumping) {
+            player->velocityY = JUMP_STRENGTH;
+            player->isJumping = true;
+        }
+    } 
+    else {
+        if (IsKeyPressed(KEY_S) && !player->isJumping) {
+            player->velocityY = JUMP_STRENGTH;
+            player->isJumping = true;
+        }
     }
-    player->position.y += player->velocityY * deltaTime ;
-    player->velocityY += GRAVITY;  
+
+    player->position.y += player->velocityY * deltaTime;
+    player->velocityY += GRAVITY;
+
     if (player->position.y > GROUND_Y) {
         player->position.y = GROUND_Y;
         player->velocityY = 0;
-        player->isJumping = false;  
+        player->isJumping = false;
     }
 
+    // 限制不能超出地圖
+    if (player->position.x < -50) player->position.x = -50;
+    if (player->stage == 1 && player->position.x > stage1Width - playerWidth) player->position.x = stage1Width - playerWidth;
+    if (player->stage == 4 && player->position.x > 3000 - playerWidth) player->position.x = 3000 - playerWidth;
+
     // 更新碰撞矩形
-    player_hitbox(player); 
+    player_hitbox(player);
 
     // 撞到牆底
     if (player->stage == 1 && CheckCollisionRecs(player->hitbox, stage1_wall) && player->velocityY < 0) {
         player->position.y = stage1_wall.y + stage1_wall.height;  
         player->velocityY = 0;
+    }
+
+    if(player->hp <= 0) player->dead = true;
+
+    if(IsKeyPressed(KEY_C)){
+        if(player->coin > 0){
+            player->hp += 60;
+            if(player->hp >100) player->hp = 100;
+            healEffectTimer = healEffectDuration;
+            player->coin --;
+        }
+        else upgradeFailTimer = upgradeFailDuration;
+
+        
+    }
+
+    if (player->hurtTimer > 0.0f) {
+        player->hurtTimer -= deltaTime;
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
+
+        
+    }
+
+    if (player->hurtTimer > 0.0f) {
+        player->hurtTimer -= deltaTime;
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
+    }
+
+    // 更新 debuff 計時器
+    if (player->debuffTimer > 0) {
+        player->debuffTimer -= deltaTime;
+    }
+
+    // 更新虛弱效果計時器
+    if (player->weakenTimer > 0) {
+        player->weakenTimer -= deltaTime;
+        if (player->weakenTimer <= 0) {
+            player->damage = player->originalDamage;
+            player->speed = player->originalSpeed;
+            player->weakenTimer = 0;
+        }
+    }
+    
+    // 更新控制反轉計時器
+    if (player->controlTimer > 0) {
+        player->controlTimer -= deltaTime;
+        if (player->controlTimer <= 0) {
+            player->controlsReversed = false;
+            player->controlTimer = 0;
+        }
+    }
+    
+    // 更新武器禁用計時器
+    if (player->weaponTimer > 0) {
+        player->weaponTimer -= deltaTime;
+        if (player->weaponTimer <= 0) {
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+        }
     }
 }
 
@@ -154,7 +265,7 @@ void player_reload(Player *player){
 }
 
 void player_UI(Player *player) {
-    // 基本資訊：子彈 / 血量 / 金幣
+    // 基本資訊
     char ammoText[20];
     snprintf(ammoText, sizeof(ammoText), "Ammo: %d/%d", player->ammo, player->maxAmmo);
     DrawText(ammoText, 10, 30, 20, WHITE);
@@ -173,8 +284,6 @@ void player_UI(Player *player) {
         snprintf(reloadText, sizeof(reloadText), "Reloading... %.1f", player->reloadTimeLeft);
         DrawText(reloadText, screenWidth - 200, 30, 20, WHITE);
     }
-
-
 
     DrawText("Skill Upgrades:", 10, 140, 20, GOLD);
 
@@ -215,12 +324,28 @@ void player_UI(Player *player) {
         upgradeEffectTimer -= GetFrameTime();
     }
 
-    if (player->upgradeFailTimer > 0.0f) {
-        float alpha = player->upgradeFailTimer / upgradeFailDuration;
+    if (upgradeFailTimer > 0.0f) {
+        float alpha = upgradeFailTimer / upgradeFailDuration;
         Color alertColor = (Color){255, 0, 0, (unsigned char)(alpha * 255)};
         DrawText("Not enough coins!", screenWidth / 2 - MeasureText("Not enough coins!", 30) / 2, screenHeight / 2 - 150, 30, alertColor);
     
-        player->upgradeFailTimer -= GetFrameTime();
+        upgradeFailTimer -= GetFrameTime();
+    }
+
+    // 補血文字特效顯示
+    if (healEffectTimer > 0.0f) {
+        float alpha = healEffectTimer / healEffectDuration;  // 1.0秒顯示時間
+        Color healColor = (Color){0, 255, 0, (unsigned char)(alpha * 255)};  // 綠色透明淡出
+
+        char healText[30];
+        snprintf(healText, sizeof(healText), "Heal Success");
+        DrawText(healText,
+                screenWidth / 2 - MeasureText(healText, 30) / 2,
+                screenHeight / 2 - 200,
+                30,
+                healColor);
+
+        healEffectTimer -= GetFrameTime();
     }
 
     if (player->invincibleCooldownLeft > 0.0f) {
@@ -231,10 +356,55 @@ void player_UI(Player *player) {
         DrawText("E: Shield Ready!", screenWidth - 200, 60, 20, GREEN);
     }
 
+    // 在右側顯示debuff狀態
+    int rightMargin = screenWidth - 300;  // 距離右邊緣300像素
+    int debuffY = 100;  // 起始Y座標
+
+    // 顯示控制反轉狀態
+    char controlText[32];
+    sprintf(controlText, "Controls Reversed: %s", player->controlsReversed ? "YES" : "NO");
+    DrawText(controlText, 
+             screenWidth/2 - MeasureText(controlText, 30)/2,  // 置中顯示
+             50,  // 距離頂部50像素
+             30,  // 字體大小從20改為30
+             player->controlsReversed ? RED : GREEN);
+
+    // 如果控制被反轉，顯示剩餘時間
+    if (player->controlsReversed) {
+        char timerText[32];
+        sprintf(timerText, "Time Left: %.1f", player->controlReverseTimer);
+        DrawText(timerText,
+                screenWidth/2 - MeasureText(timerText, 30)/2,  // 置中顯示
+                90,  // 在控制反轉狀態下方顯示
+                30,  // 字體大小
+                RED);
+    }
+    debuffY += 30;  // 下一個debuff的Y座標
+
+    // 顯示武器禁用狀態
+    char weaponText[32];
+    sprintf(weaponText, "Weapon Disabled: %s", player->weaponDisabled ? "YES" : "NO");
+    DrawText(weaponText, rightMargin, debuffY, 20, player->weaponDisabled ? RED : GREEN);
+    debuffY += 30;
+
+    // 顯示虛弱狀態
+    char weakText[32];
+    sprintf(weakText, "Weakened: %s", player->weakenTimer > 0 ? "YES" : "NO");
+    DrawText(weakText, rightMargin, debuffY, 20, player->weakenTimer > 0 ? RED : GREEN);
+    debuffY += 30;
+
+    // 如果有任何debuff生效，顯示剩餘時間
+    if (player->debuffTimer > 0) {
+        char timerText[32];
+        sprintf(timerText, "Debuff Time: %.1f", player->debuffTimer);
+        DrawText(timerText, rightMargin, debuffY, 20, RED);
+    }
 }
 
 void player_attack(Player *player,Camera2D camera){
-    Vector2 fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    Vector2 fireOrigin;
+    if(player->facingRight) fireOrigin = (Vector2){ player->position.x + 240, player->position.y + 170 };
+    if(!player->facingRight)fireOrigin = (Vector2){ player->position.x -20, player->position.y + 170 };
 
     // 換彈邏輯：按 R 鍵開始換彈
     if (IsKeyPressed(KEY_R) && player->ammo < player->maxAmmo && player->reloadTimeLeft <= 0) {
@@ -245,7 +415,11 @@ void player_attack(Player *player,Camera2D camera){
     if(player->reloading) player_reload(player);
  
     //射擊(按左鍵)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && player->ammo > 0 && player->reloadTimeLeft <= 0) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && 
+        player->ammo > 0 && 
+        player->reloadTimeLeft <= 0 && 
+        !player->weaponDisabled) {  // 添加武器禁用檢查
+        player->shootEffectTimer = shootEffectDuration;
         //計算子彈移動
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (!player->bullets[i].active) {
@@ -269,10 +443,9 @@ void player_attack(Player *player,Camera2D camera){
 
 }
 
-void player_skillupgrade(Player *player) {
+void player_skillupgrade(Player *player,GameSounds *sounds) {
 
     int upgradeType;
-
     if (IsKeyPressed(KEY_ONE)) {  // 按 1 升級換彈速度
         upgradeType = 1;
     }
@@ -296,9 +469,10 @@ void player_skillupgrade(Player *player) {
                 player->reload_upgrade_times++;
                 player->upgrade_reload_cost += 2;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "reloadupgrade!");
             } else {
-                player->upgradeFailTimer = upgradeFailDuration;
+                upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -314,9 +488,10 @@ void player_skillupgrade(Player *player) {
                 player->ammo_upgrade_times++;
                 player->upgrade_ammo_cost += 2;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "ammoupgrade!");
             } else {
-                player->upgradeFailTimer = upgradeFailDuration;
+                upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -331,9 +506,10 @@ void player_skillupgrade(Player *player) {
                 player->upgrade_invincible_cost += 3;
                 player->invincible_upgrade_times++;
                 upgradeEffectTimer = upgradeEffectDuration;  // 觸發特效！
+                PlaySound(sounds->upgrade);
                 TraceLog(LOG_INFO, "invincibleupgrade!");
             } else {
-                player->upgradeFailTimer = upgradeFailDuration;
+                upgradeFailTimer = upgradeFailDuration;
                 TraceLog(LOG_WARNING, "No enough money!");
             }
             break;
@@ -343,48 +519,67 @@ void player_skillupgrade(Player *player) {
 
 }
 
-void player_drawbullet(Player *player, Camera2D camera) {
-    // 计算镜头的视野范围（世界坐标）
-    int sceneWidth;
-    if(player->stage == 1) {
-        sceneWidth = stage1Width;
-    } else if(player->stage == 2) {
-        sceneWidth = stage2Width;  // 或者设置为 stage2 的宽度
-    }
-    
+void player_drawbullet(Player *player, Camera2D camera, GameTextures *textures) {
+    int sceneWidth = (player->stage == 1) ? stage1Width : stage2Width;
+
     Vector2 screenTopLeft = GetScreenToWorld2D((Vector2){0, 0}, camera);
     Vector2 screenBottomRight = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 
     for (int i = 0; i < MAX_BULLETS; i++) {
-        Rectangle bulletRect = { player->bullets[i].position.x, player->bullets[i].position.y, SIZE_BULLET, SIZE_BULLET};
-        if (player->bullets[i].active) {
-            player->bullets[i].position.x += player->bullets[i].speed.x;
-            player->bullets[i].position.y += player->bullets[i].speed.y;
+        Bullet *b = &player->bullets[i];
+        if (b->active) {
+            // 更新子彈位置
+            b->position.x += b->speed.x;
+            b->position.y += b->speed.y;
 
-            // 超出地图范围，停用子弹
-            if (player->bullets[i].position.x < 0 || player->bullets[i].position.x > sceneWidth ||
-                player->bullets[i].position.y < 0 || player->bullets[i].position.y > screenHeight || 
-                (player->stage == 1 && CheckCollisionRecs(bulletRect, stage1_wall))) {
-                player->bullets[i].active = false;
+            // 子彈飛出邊界或碰到牆壁則失效
+            if (b->position.x < 0 || b->position.x > sceneWidth ||
+                b->position.y < 0 || b->position.y > screenHeight ||
+                (player->stage == 1 && CheckCollisionRecs(b->hitbox, stage1_wall))) {
+                b->active = false;
                 continue;
             }
 
-            float dx = player->bullets[i].position.x - player->bullets[i].startPosition.x;
-            float dy = player->bullets[i].position.y - player->bullets[i].startPosition.y;
-            float distance = sqrtf(dx * dx + dy * dy);
-            if (distance >= 500.0f) {
-                player->bullets[i].active = false;
+            // 超出飛行距離則失效
+            float dx = b->position.x - b->startPosition.x;
+            float dy = b->position.y - b->startPosition.y;
+            if (sqrtf(dx * dx + dy * dy) >= 500.0f) {
+                b->active = false;
                 continue;
             }
-            // 在画面内才绘制
-            if (player->bullets[i].position.x >= screenTopLeft.x && player->bullets[i].position.x <= screenBottomRight.x &&
-                player->bullets[i].position.y >= screenTopLeft.y && player->bullets[i].position.y <= screenBottomRight.y) {
-                DrawCircleV(player->bullets[i].position, SIZE_BULLET, RED);
+
+            // 若在鏡頭內，繪製子彈
+            if (b->position.x >= screenTopLeft.x && b->position.x <= screenBottomRight.x &&
+                b->position.y >= screenTopLeft.y && b->position.y <= screenBottomRight.y) {
+
+                // 設定旋轉角度
+                float angle = atan2f(b->speed.y, b->speed.x) * RAD2DEG;
+
+                // 設定貼圖繪製資訊
+                Rectangle source = { 0, 0, (float)textures->playerBullet.width, (float)textures->playerBullet.height };
+                Rectangle dest = {
+                    b->position.x,
+                    b->position.y,
+                    SIZE_BULLET,
+                    SIZE_BULLET
+                };
+                Vector2 origin = { SIZE_BULLET / 2.0f, SIZE_BULLET / 2.0f };
+
+                // 更新 hitbox 為未旋轉的矩形，與圖中央對齊
+                b->hitbox = (Rectangle){
+                    b->position.x - SIZE_BULLET / 2.0f,
+                    b->position.y - SIZE_BULLET / 2.0f,
+                    SIZE_BULLET,
+                    SIZE_BULLET
+                };
+
+                // 繪製子彈圖片（可旋轉）
+                DrawTexturePro(textures->playerBullet, source, dest, origin, angle, WHITE);
+
             }
         }
     }
 }
-
 
 void player_draw(Player *player, GameTextures *textures) {
     Texture2D frame;
@@ -403,7 +598,16 @@ void player_draw(Player *player, GameTextures *textures) {
         source.width = -source.width;
     }
 
-    DrawTexturePro(frame, source, dest, origin, 0.0f, WHITE);
+      // 受傷時變紅（閃爍版）
+    Color playerTint = WHITE;
+    if (player->hurtTimer > 0.0f) {
+        // 閃爍效果（每0.05秒切換紅/白）
+        if (((int)(player->hurtTimer * 20) % 2) == 0) {
+            playerTint = (Color){255, 60, 60, 255}; // 紅色Tint
+        }
+    }
+    
+    DrawTexturePro(frame, source, dest, origin, 0.0f, playerTint);
 
     if (player->invincible) {
         Rectangle dest = {
@@ -430,15 +634,43 @@ void player_draw(Player *player, GameTextures *textures) {
             (Color){255, 255, 255, 180}
         );
     }
-}
 
+    if (player->shootEffectTimer > 0.0f) {
+        Vector2 effectPos = player->position;
+
+        if (player->facingRight) {
+            effectPos.x += 200;
+        } else {
+            effectPos.x -= 30;  // shooting.png 寬 60，向左縮一點
+        }
+        effectPos.y += 160; // 可視情況微調 Y 值
+
+        Rectangle src = { 0, 0, 60, 29 };
+        if (!player->facingRight) src.width = -60; // 左翻轉
+
+        Rectangle dest = { effectPos.x, effectPos.y, 60, 29 };
+        Vector2 origin = { 0, 0 };
+
+        DrawTexturePro(textures->shooting, src, dest, origin, 0.0f, WHITE);
+
+        player->shootEffectTimer -= GetFrameTime();
+    }
+}
 
 void player_drawhitbox(Player *player){
     DrawRectangleLinesEx(player->hitbox, 2, (Color){255, 0, 0, 180});
+
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        Bullet *b = &player->bullets[i];
+        if (b->active) {
+            DrawRectangleLinesEx(b->hitbox, 2, WHITE);
+        }
+    }
 }
 
-void player_dead(Player *player){
+void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSounds *sounds,bool *deadsound){
     
+
 
     if (IsKeyPressed(KEY_SPACE)) {
         
@@ -447,6 +679,34 @@ void player_dead(Player *player){
             player->hp = 100;
             player->position = (Vector2){300, 300}; // 重生點
             player->dead = false;
+            *deadsound = false;
+            player->velocityY = 0;
+            player->isJumping = false;
+            player->invincible = false;
+            player->invincibleTimeLeft = 0;
+            player->invincibleCooldownLeft = 0;
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+            player->debuffTimer = 0;
+            player->weakenTimer = 0;
+            player->velocityY = 0;
+            player->isJumping = false;
+            player->invincible = false;
+            player->invincibleTimeLeft = 0;
+            player->invincibleCooldownLeft = 0;
+            player->controlsReversed = false;
+            player->controlReverseTimer = 0;
+            player->weaponDisabled = false;
+            player->weaponTimer = 0;
+            player->debuffTimer = 0;
+            player->weakenTimer = 0;
+        }
+        else{
+            *currentGameState = MENU;
+            *Isinit = false;
+            *deadsound = false;
         }
         
     }
@@ -468,7 +728,7 @@ void player_deadUI(Player *player){
     } 
     // 沒錢：灰色 GAME OVER 提示
     else {
-        const char *noMoneyText = "Not enough coins. Press [ESC] and GAMEOVER";
+        const char *noMoneyText = "Not enough coins. Press [SPACE] and GAMEOVER";
         int textWidth = MeasureText(noMoneyText, 30);
         DrawText(noMoneyText, (screenWidth - textWidth) / 2, screenHeight / 2, 30, GRAY);
     }
