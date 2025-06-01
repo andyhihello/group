@@ -25,14 +25,13 @@ void player_hitbox(Player *player) {
 }
 
 void player_init(Player *player){
-    memset(player, 0, sizeof(Player));    
-    memset(player, 0, sizeof(Player));    
+    memset(player, 0, sizeof(Player));     
     // 基本屬性初始化
     player->stage = 1;
     player->stageChanged = true;  // 初始化stageChanged
-    player->position = (Vector2){14300, 300};   // 起始位置
-    player->hp = 10000;                         // 初始血量
-    player->coin = 100;                         // 初始金幣
+    player->position = (Vector2){300, 300};   // 起始位置
+    player->hp = 100;                         // 初始血量
+    player->coin = 1;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
     player->invincible = false;               // 是否無敵
@@ -44,7 +43,7 @@ void player_init(Player *player){
     player->originalDamage = player->damage;  // 保存原始值
     player->originalSpeed = 300.0f;        // 保存原始移動速度
     player->debuffTimer = 0;
-    player->tutorial = 0;                     // 教學進度
+    player->tutorial = 1;                     // 教學進度
     player->hurtTimer = 0.0;
     player->hurtTimer = 0.0;
 

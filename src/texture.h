@@ -44,6 +44,7 @@ typedef struct {
     Music menumusic;
     Music stagemusic;
     Music tutorialmusic;
+    Music endingmusic;
     Sound upgrade;
     Sound attack;
     Sound playerdied;

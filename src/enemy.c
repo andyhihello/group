@@ -374,7 +374,7 @@ void enemy_bulletDamageSoldier(Player *player, Soldier *soldier, GameSounds *sou
 
                 if (soldier->health <= 0) {
                     soldier->active = false;
-                    player->coin += 2;
+                    player->coin += 1;
 
                     // 清除士兵所有子彈
                     for (int j = 0; j < 3; j++) {

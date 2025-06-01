@@ -95,7 +95,6 @@ int main() {
             SetSoundVolume(sounds.attack,sfxVolume);
             SetSoundVolume(sounds.playerdied,sfxVolume);
             SetSoundVolume(sounds.enterbossstage,sfxVolume);
-            SetSoundVolume(sounds.enterbossstage,sfxVolume);  // 修正bossEnter为enterbossstage
             SetMusicVolume(sounds.bossMusic,bgmVolume);       // 修正bossmusic为bossMusic
 
             if (player.stage == 1 && !player.dead){
@@ -190,6 +189,13 @@ int main() {
                 
                 stage_exitdoor(&player,&currentGameState,&Isinit);
                 player_update(&player, GetFrameTime());
+
+                if (!IsMusicStreamPlaying(sounds.endingmusic)) {
+                        PlayMusicStream(sounds.endingmusic);
+                    }
+
+                SetMusicVolume(sounds.endingmusic, bgmVolume*0.5);
+                UpdateMusicStream(sounds.endingmusic);
                 
             }
 

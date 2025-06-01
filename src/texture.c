@@ -73,10 +73,11 @@ void loadGameTextures(GameTextures *textures, GameSounds *sounds) {
     sounds->menumusic = LoadMusicStream("resource/sound/menumusic.mp3");
     sounds->stagemusic = LoadMusicStream("resource/sound/stagemusic.mp3");
     sounds->tutorialmusic = LoadMusicStream("resource/sound/tutorialmusic.mp3");
+    sounds->endingmusic = LoadMusicStream("resource/sound/endingmusic.mp3");
     sounds->upgrade = LoadSound("resource/sound/upgrade.mp3");
     sounds->attack = LoadSound("resource/sound/attack.mp3");
     sounds->playerdied = LoadSound("resource/sound/playerdied.mp3");
-    sounds->enterbossstage = LoadSound("resource/sound/boss first.mp3");
+    sounds->enterbossstage = LoadSound("resource/sound/enterbossstage.mp3");
     sounds->bossMusic = LoadMusicStream("resource/sound/boss ing.mp3");
 
 }

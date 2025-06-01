@@ -85,7 +85,6 @@ void stage2_update(Boss *boss, Player *player, GameSounds *sounds) {
     // 在进入stage2时播放音效
     static bool firstEnter = true;
     if (firstEnter) {
-        PlaySound(sounds->enterbossstage);  // 播放进入boss房的音效
         PlayMusicStream(sounds->bossMusic); // 开始播放boss房背景音乐
         firstEnter = false;
     }
