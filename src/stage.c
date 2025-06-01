@@ -7,9 +7,7 @@ void stage_drawtutorial(Player *player) {
     // 背景遮罩
     int boxWidth = 1200;
     int boxHeight = 350;
-    int boxHeight = 350;
     int boxX = 200;
-    int boxY = 120;
     int boxY = 120;
 
     DrawRectangle(boxX, boxY, boxWidth, boxHeight, Fade(BLACK, 0.95f));
@@ -28,7 +26,7 @@ void stage_drawtutorial(Player *player) {
         DrawText("Mouse Left  - Shoot", textStartX + 20, textStartY + 100, 22, WHITE);
         DrawText("R           - Reload Ammo", textStartX + 20, textStartY + 130, 22, WHITE);
         DrawText("E           - Activate Shield (invincibility)", textStartX + 20, textStartY + 160, 22, WHITE);
-        DrawText("C           - Spend 1 coin to heal 60 HP (HP will not exceed 100)", textStartX + 20, textStartY + 190, 22, WHITE);
+        DrawText("C           - Spend 1 coin to heal 60 HP (HP will not exceed 100 and will have a 10-second cooldown.)", textStartX + 20, textStartY + 190, 22, WHITE);
         break;
 
     case 2:

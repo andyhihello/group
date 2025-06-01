@@ -31,11 +31,11 @@ void player_init(Player *player){
     player->stageChanged = true;  // 初始化stageChanged
     player->position = (Vector2){300, 300};   // 起始位置
     player->hp = 100;                         // 初始血量
-    player->coin = 1;                         // 初始金幣
+    player->coin = 0;                         // 初始金幣
     player->damage = 5;                       // 子彈傷害
     player->dead = false;                     // 是否死亡
     player->invincible = false;               // 是否無敵
-    player->invincibleDuration = 3.0f;        // 無敵持續時間
+    player->invincibleDuration = 2.0f;        // 無敵持續時間
     player->invincibleTimeLeft = 0.0f;        // 無敵剩餘時間
     player->invincibleCooldown = 15.0f;       // 無敵技能冷卻時間
     player->invincibleCooldownLeft = 0.0f;    // 無敵剩餘冷卻
@@ -45,13 +45,13 @@ void player_init(Player *player){
     player->debuffTimer = 0;
     player->tutorial = 1;                     // 教學進度
     player->hurtTimer = 0.0;
-    player->hurtTimer = 0.0;
+    player->healCooldown = 0.0f;
 
     // 子彈與移動相關設定
     player->reloadtime = 3;                   // 換彈所需時間（秒）
     player->reloadTimeLeft = 0;               // 換彈倒數時間
-    player->ammo = 100;                       // 當前子彈數
-    player->maxAmmo = 100;                    // 最大子彈數
+    player->ammo = 20;                       // 當前子彈數
+    player->maxAmmo = 20;                    // 最大子彈數
     player->speed = 300.0f;        // 設置初始移動速度
     player->stage = 1;                        // 起始關卡
     player->controlsReversed = false;         // 是否控制反轉
@@ -195,12 +195,13 @@ void player_update(Player *player, float deltaTime) {
 
     if(player->hp <= 0) player->dead = true;
 
-    if(IsKeyPressed(KEY_C)){
+    if(IsKeyPressed(KEY_C)&& player->healCooldown <= 0.0f){
         if(player->coin > 0){
             player->hp += 60;
             if(player->hp >100) player->hp = 100;
             healEffectTimer = healEffectDuration;
             player->coin --;
+            player->healCooldown = 10.0f;  // 啟動 10 秒冷卻
         }
         else upgradeFailTimer = upgradeFailDuration;
 
@@ -209,15 +210,13 @@ void player_update(Player *player, float deltaTime) {
 
     if (player->hurtTimer > 0.0f) {
         player->hurtTimer -= deltaTime;
-        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
-
-        
+        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;        
     }
 
-    if (player->hurtTimer > 0.0f) {
-        player->hurtTimer -= deltaTime;
-        if (player->hurtTimer < 0.0f) player->hurtTimer = 0.0f;
-    }
+    if (player->healCooldown > 0.0f) {
+    player->healCooldown -= deltaTime;
+    if (player->healCooldown < 0.0f) player->healCooldown = 0.0f;
+}
 
     // 更新 debuff 計時器
     if (player->debuffTimer > 0) {
@@ -348,6 +347,14 @@ void player_UI(Player *player) {
         healEffectTimer -= GetFrameTime();
     }
 
+    if (player->healCooldown > 0.0f) {
+    char healCooldownText[50];
+    snprintf(healCooldownText, sizeof(healCooldownText), "C: Heal Cooldown %.1f", player->healCooldown);
+    DrawText(healCooldownText, screenWidth - 280, 90, 20, SKYBLUE);
+    } else {
+        DrawText("C: Heal Ready!", screenWidth - 200, 90, 20, GREEN);
+    }
+
     if (player->invincibleCooldownLeft > 0.0f) {
         char cooldownText[40];
         snprintf(cooldownText, sizeof(cooldownText), "E: Shield Cooldown %.1f", player->invincibleCooldownLeft);
@@ -359,6 +366,8 @@ void player_UI(Player *player) {
     // 在右側顯示debuff狀態
     int rightMargin = screenWidth - 300;  // 距離右邊緣300像素
     int debuffY = 100;  // 起始Y座標
+
+    if(player->stage == 2){
 
     // 顯示控制反轉狀態
     char controlText[32];
@@ -378,27 +387,9 @@ void player_UI(Player *player) {
                 90,  // 在控制反轉狀態下方顯示
                 30,  // 字體大小
                 RED);
+        }
     }
-    debuffY += 30;  // 下一個debuff的Y座標
 
-    // 顯示武器禁用狀態
-    char weaponText[32];
-    sprintf(weaponText, "Weapon Disabled: %s", player->weaponDisabled ? "YES" : "NO");
-    DrawText(weaponText, rightMargin, debuffY, 20, player->weaponDisabled ? RED : GREEN);
-    debuffY += 30;
-
-    // 顯示虛弱狀態
-    char weakText[32];
-    sprintf(weakText, "Weakened: %s", player->weakenTimer > 0 ? "YES" : "NO");
-    DrawText(weakText, rightMargin, debuffY, 20, player->weakenTimer > 0 ? RED : GREEN);
-    debuffY += 30;
-
-    // 如果有任何debuff生效，顯示剩餘時間
-    if (player->debuffTimer > 0) {
-        char timerText[32];
-        sprintf(timerText, "Debuff Time: %.1f", player->debuffTimer);
-        DrawText(timerText, rightMargin, debuffY, 20, RED);
-    }
 }
 
 void player_attack(Player *player,Camera2D camera){
@@ -680,17 +671,6 @@ void player_dead(Player *player,GameState *currentGameState,bool *Isinit,GameSou
             player->position = (Vector2){300, 300}; // 重生點
             player->dead = false;
             *deadsound = false;
-            player->velocityY = 0;
-            player->isJumping = false;
-            player->invincible = false;
-            player->invincibleTimeLeft = 0;
-            player->invincibleCooldownLeft = 0;
-            player->controlsReversed = false;
-            player->controlReverseTimer = 0;
-            player->weaponDisabled = false;
-            player->weaponTimer = 0;
-            player->debuffTimer = 0;
-            player->weakenTimer = 0;
             player->velocityY = 0;
             player->isJumping = false;
             player->invincible = false;

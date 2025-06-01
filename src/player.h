@@ -42,6 +42,7 @@ typedef struct {
     // 生命與狀態
     int hp;                    // 血量
     bool dead;                 // 是否死亡
+    float healCooldown;
     bool invincible;           // 是否處於無敵狀態
     float hurtTimer; // 受傷後的倒數計時
     float invincibleTimeLeft;  // 無敵剩餘時間
