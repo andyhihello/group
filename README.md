@@ -11,7 +11,7 @@ Player
 
 Attack : Gun, starts with 25 ammo
 
-<img src="src/resource/player/stand.png" width="800">
+<img src="src/resource/player/stand.png" width="200">
 
 ## Stage 1 :
 
