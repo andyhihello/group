@@ -61,7 +61,7 @@ Collect coins by killing enemies and press \[num\] keys to upgrade:
 
 2\. Download the game zip from github.
 
-## Method 1
+## Method 1 (Don't need to download raylib)
 
 1\. Go to the game file and open src
 
