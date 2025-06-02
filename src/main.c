@@ -88,7 +88,7 @@ int main() {
                 savingdata = false;
                 
             }
-            if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
+            //if(IsKeyPressed(KEY_H)) debug = (debug +1)%2;
 
             //聲音設定
             SetSoundVolume(sounds.upgrade,sfxVolume);

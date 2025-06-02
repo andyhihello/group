@@ -236,9 +236,6 @@ void boss_update(Boss *boss, Player *player, GameSounds *sounds) {
                     }
                 }
                 
-                if (IsKeyDown(KEY_TAB)) {
-                    DrawRectangleRec(attackArea, (Color){255, 0, 0, 128});
-                }
             }
             
             if (boss->currentFrame >= BOSS_ATTACK_FRAME_COUNT) {
@@ -626,7 +623,7 @@ void boss_draw(Boss *boss, GameTextures *textures, Vector2 screenTopLeft, Vector
     DrawTexturePro(currentTexture, source, dest, origin, 0, WHITE);
     
     // DEBUG: 显示攻击范围和碰撞箱
-    if (IsKeyDown(KEY_TAB)) {
+    /*if (IsKeyDown(KEY_TAB)) {
         // 显示攻击范围
         Color rangeColor = {255, 0, 0, 128};
         DrawRectangle(boss->position.x - BOSS_ATTACK_RANGE,
@@ -656,7 +653,7 @@ void boss_draw(Boss *boss, GameTextures *textures, Vector2 screenTopLeft, Vector
             };
         }
         DrawRectangleRec(bulletHitbox, (Color){0, 0, 255, 128});
-    }
+    }*/
 
     // 绘制血条
     float barWidth = 200.0f;    // 血条总宽
