@@ -1,5 +1,5 @@
 # Game Background  
-In the near future, the world’s most powerful military corporation, NEX Corp, has formed an alliance with an underground extremist group to develop the Neural Override System, a technology capable of hacking all electronic devices and remotely controlling the human brain. With this system, they plan to manipulate world leaders and establish an absolute digital empire, seizing total control over humanity. The player needs to play a spy to invade the NEX Corp, destroy the device, and save humanity !
+In the near future, the world’s most powerful military corporation, NEX Corp, has formed an alliance with an underground extremist group to develop the Neural Override System, a technology capable of hacking all electronic devices and remotely controlling the human brain. With this system, they plan to manipulate world leaders and establish an absolute digital empire, seizing total control over humanity. The player needs to play a spy to invade the NEX Corp, destroy the device, and save humanity!
 
 # Game Introduction
 
@@ -74,3 +74,16 @@ Collect coins by killing enemies and press \[num\] keys to upgrade:
 2\. Type cd /The game file location/ then press Enter.
 
 3\. Type ./run.sh
+
+## Work Division
+
+洪子翔 413410046 - Most of the structures and codes, stage 1 design, and making trailer video
+
+魏秉泓 413235016 - stage 2 design
+
+黃翊誠 413410074 - Menu, sound, and writing readme
+
+許文成 413410080 - All the Arts
+
+張峻綸 413410055 - stage 1 enemy design
+
