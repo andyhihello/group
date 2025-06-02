@@ -67,7 +67,7 @@ Collect coins by killing enemies and press \[num\] keys to upgrade:
 
 2\. Open main.exe
 
-# Method 2
+## Method 2
 
 1\. Go to C:/raylib/w64devkit and open the file w64devkit.exe.
 
