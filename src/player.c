@@ -431,7 +431,7 @@ void player_attack(Player *player,Camera2D camera,GameSounds *sounds){
             }
         }
     }
-    else PlaySound(sounds->noammo); 
+    else if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) PlaySound(sounds->noammo); 
 
 }
 
