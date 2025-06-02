@@ -2,7 +2,6 @@ Game Background
 In the near future, the world’s most powerful military corporation, NEX Corp, has formed an alliance with an underground extremist group to develop the Neural Override System, a technology capable of hacking all electronic devices and remotely controlling the human brain. With this system, they plan to manipulate world leaders and establish an absolute digital empire, seizing total control over humanity. The player needs to play a spy to invade the NEX Corp, destroy the device, and save humanity !
 
 Game Introduction
-
 Get ready for a two-stage adventure! In **Stage 1**, you'll battle robot soldiers and security **drones** blocking your path. **Stage 2** cranks up the challenge, pitting you against a powerful **boss** and specialized drones, plus unique **mini-games** to test your skills.
 
 Characters
