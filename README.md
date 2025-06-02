@@ -11,7 +11,7 @@ Player
 
 Attack : Gun, starts with 25 ammo
 
-<img src="https://raw.githubusercontent.com/liquidCS/MonsterComing/main/Resources/DemoGIF.gif" width="800">
+<img src="src/resource/player/stand.png" width="800">
 
 ## Stage 1 :
 
